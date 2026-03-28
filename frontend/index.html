@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voting DApp Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <main class="container py-5">
+        <section class="hero-panel mb-4">
+          <div>
+            <p class="eyebrow mb-2">Blockchain Voting System</p>
+            <h1 class="display-5 mb-3">Transparent local election demo on Hardhat</h1>
+            <p class="hero-copy mb-0">
+              Connect MetaMask, whitelist voters, cast one vote per wallet, and watch tally results update on demand.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <button id="connectWalletButton" class="btn btn-primary btn-lg">Connect Wallet</button>
+            <button id="switchNetworkButton" class="btn btn-outline-light btn-lg">Switch to Hardhat</button>
+          </div>
+        </section>
+
+        <section class="row g-4 mb-4">
+          <div class="col-lg-4">
+            <div class="status-card h-100">
+              <span class="status-label">Connected account</span>
+              <strong id="accountValue" class="status-value">Not connected</strong>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="status-card h-100">
+              <span class="status-label">Network</span>
+              <strong id="networkValue" class="status-value">Unknown</strong>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="status-card h-100">
+              <span class="status-label">Voter status</span>
+              <strong id="eligibilityValue" class="status-value">Read only</strong>
+            </div>
+          </div>
+        </section>
+
+        <div id="statusBanner" class="alert alert-secondary status-banner" role="alert">
+          Waiting for contract deployment.
+        </div>
+
+        <section id="adminPanel" class="panel mb-4 d-none">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow mb-2">Owner controls</p>
+              <h2 class="h4 mb-0">Admin actions</h2>
+            </div>
+            <span class="badge text-bg-warning">Owner only</span>
+          </div>
+          <div class="row g-4 mt-1">
+            <div class="col-lg-4">
+              <form id="candidateForm" class="action-card">
+                <label class="form-label" for="candidateName">Add candidate</label>
+                <input id="candidateName" class="form-control mb-3" type="text" placeholder="Candidate name" required />
+                <button class="btn btn-dark w-100" type="submit">Create candidate</button>
+              </form>
+            </div>
+            <div class="col-lg-4">
+              <form id="whitelistForm" class="action-card">
+                <label class="form-label" for="voterAddress">Whitelist voter</label>
+                <input id="voterAddress" class="form-control mb-3" type="text" placeholder="0x..." required />
+                <button class="btn btn-dark w-100" type="submit">Grant voting access</button>
+              </form>
+            </div>
+            <div class="col-lg-4">
+              <div class="action-card">
+                <label class="form-label">Close election</label>
+                <p class="text-muted small mb-3">This blocks any further vote transactions.</p>
+                <button id="endElectionButton" class="btn btn-outline-danger w-100" type="button">End election</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow mb-2">Live tally board</p>
+              <h2 class="h4 mb-0">Candidates</h2>
+            </div>
+            <span id="electionStatusBadge" class="badge text-bg-success">Election active</span>
+          </div>
+          <div id="candidateGrid" class="row g-4 mt-1"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+    <script src="./js/contract-config.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>
