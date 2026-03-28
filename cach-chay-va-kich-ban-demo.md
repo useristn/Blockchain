@@ -125,6 +125,17 @@ Ví dụ trong môi trường hiện tại:
 
 MetaMask thay đổi giao diện khá thường xuyên, nên chữ hiển thị có thể khác nhau giữa các phiên bản. Về bản chất, bạn cần đưa private key của các account Hardhat vào MetaMask bằng một trong hai cách dưới đây.
 
+> **⚠️ Quan trọng:** Khi nhập private key vào MetaMask, **bỏ phần `0x` ở đầu**. MetaMask chỉ chấp nhận chuỗi hex thuần, không có tiền tố `0x`. Nếu để nguyên `0x` sẽ báo lỗi "Cannot import invalid private key".
+
+Private key của các account Hardhat mặc định (đã bỏ `0x`, dùng ngay được):
+
+| Account | Private key (nhập nguyên dòng này vào MetaMask) |
+|---------|-----------------------------------------------|
+| Admin (#0) | `ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` |
+| Voter 1 (#1) | `59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d` |
+| Voter 2 (#2) | `5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a` |
+| Unwhitelisted tester (#3) | `7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6` |
+
 ### 6.3 Cách thêm account Hardhat vào MetaMask
 
 #### Cách A. Dùng chức năng thêm hoặc import account trong menu tài khoản
@@ -133,7 +144,7 @@ Trong MetaMask:
 
 1. Bấm vào ảnh đại diện tài khoản ở góc trên.
 2. Tìm một trong các mục như `Add account`, `Add account or hardware wallet`, `Import account` hoặc mục tương tự.
-3. Nếu có lựa chọn import bằng private key, dán private key của account Hardhat vào.
+3. Chọn import bằng private key, dán private key **không có `0x`** từ bảng trên vào.
 4. Đặt tên dễ nhớ nếu MetaMask cho phép, ví dụ `Hardhat Admin`, `Hardhat Voter 1`, `Hardhat Voter 2`.
 
 #### Cách B. Tạo profile MetaMask riêng cho demo rồi import private key
