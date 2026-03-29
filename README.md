@@ -28,6 +28,8 @@ npm run serve:frontend
 
 Open `http://127.0.0.1:8081` after the frontend server starts.
 
+`npm run demo:localhost` now prepares the frontend demo state by whitelisting two test voters and starting the election without consuming their votes.
+
 ## Test accounts for voting (MetaMask)
 
 After running `npm run deploy:localhost`, the script now auto-generates `tai-khoan-test-local.md` at repository root.
@@ -48,8 +50,8 @@ Use that markdown file to copy one local account private key and import it into 
 2. Deploy + sync frontend config: `npm run deploy:localhost`
 3. Start frontend: `npm run serve:frontend`
 4. Open `http://127.0.0.1:8081`
-5. In MetaMask, switch to Hardhat and import one voter account from `tai-khoan-test-local.md`
-6. Use owner account to whitelist voter addresses
-7. Owner starts election (this snapshots voters and freezes parameters)
-8. Voter casts one vote and verify second vote is blocked
-9. Owner ends election and verify voting is blocked afterward
+5. Run `npm run demo:localhost` once to whitelist `Voter 1` and `Voter 2`, then start the election
+6. In MetaMask, switch to Hardhat and import one voter account from `tai-khoan-test-local.md`
+7. Connect `Voter 1` or `Voter 2` in the frontend and cast one vote
+8. Verify the same wallet cannot vote a second time
+9. Connect the owner account if you want to close the election from the admin panel

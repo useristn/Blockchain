@@ -21,10 +21,12 @@ contract Voting {
     uint8 private constant ACTION_ELECTION_STARTED = 3;
     uint8 private constant ACTION_VOTE_CAST = 4;
     uint8 private constant ACTION_ELECTION_ENDED = 5;
+    uint8 private constant ACTION_ELECTION_ROUND_RESET = 6;
 
     address public owner;
     bool public electionStarted;
     bool public electionEnded;
+    uint256 public electionRound;
     uint256 public electionStartTimestamp;
     uint256 public electionStartBlock;
     uint256 public electionEndTimestamp;
@@ -33,7 +35,7 @@ contract Voting {
     uint256 public totalVotesCast;
 
     mapping(address => bool) public whitelist;
-    mapping(address => bool) public hasVoted;
+    mapping(address => uint256) private lastVotedRound;
     mapping(address => uint256) public whitelistBlock;
 
     Candidate[] private candidates;
@@ -44,6 +46,7 @@ contract Voting {
     event ElectionStarted(uint256 timestamp, uint256 startBlock, uint256 snapshotVoters);
     event Voted(address indexed voter, uint256 indexed candidateId);
     event ElectionClosed(uint256 timestamp);
+    event ElectionRoundReset(uint256 indexed nextRound);
     event AuditTrailRecorded(
         uint8 indexed actionType,
         address indexed actor,
@@ -59,7 +62,7 @@ contract Voting {
     }
 
     modifier beforeElectionStart() {
-        require(!electionStarted, "Election parameters are frozen");
+        require(!electionStarted || electionEnded, "Election parameters are frozen");
         _;
     }
 
@@ -98,7 +101,12 @@ contract Voting {
     function startElection() external onlyOwner beforeElectionStart {
         require(candidates.length > 0, "At least one candidate required");
 
+        if (electionEnded) {
+            _prepareNextElectionRound();
+        }
+
         electionStarted = true;
+        electionRound += 1;
         electionStartTimestamp = block.timestamp;
         electionStartBlock = block.number;
         snapshotVoterCount = whitelistedVoterCount;
@@ -110,10 +118,10 @@ contract Voting {
     function vote(uint256 candidateId) external whenElectionOpen {
         require(whitelist[msg.sender], "You are not allowed to vote");
         require(whitelistBlock[msg.sender] <= electionStartBlock, "Voter not in election snapshot");
-        require(!hasVoted[msg.sender], "You have already voted");
+        require(lastVotedRound[msg.sender] != electionRound, "You have already voted");
         require(candidateId < candidates.length, "Candidate does not exist");
 
-        hasVoted[msg.sender] = true;
+        lastVotedRound[msg.sender] = electionRound;
         candidates[candidateId].voteCount += 1;
         totalVotesCast += 1;
 
@@ -131,6 +139,10 @@ contract Voting {
 
     function getCandidatesCount() external view returns (uint256) {
         return candidates.length;
+    }
+
+    function hasVoted(address voter) external view returns (bool) {
+        return lastVotedRound[voter] == electionRound;
     }
 
     function getCandidate(uint256 candidateId) external view returns (string memory name, uint256 voteCount) {
@@ -204,6 +216,23 @@ contract Voting {
 
         auditTrail.push(record);
         emit AuditTrailRecorded(actionType, actor, subject, refId, record.timestamp, record.blockNumber);
+    }
+
+    function _prepareNextElectionRound() private {
+        electionEnded = false;
+        electionEndTimestamp = 0;
+        electionStartTimestamp = 0;
+        electionStartBlock = 0;
+        snapshotVoterCount = 0;
+        totalVotesCast = 0;
+
+        for (uint256 index = 0; index < candidates.length; index++) {
+            candidates[index].voteCount = 0;
+        }
+
+        uint256 nextRound = electionRound + 1;
+        _recordAudit(ACTION_ELECTION_ROUND_RESET, msg.sender, address(0), nextRound);
+        emit ElectionRoundReset(nextRound);
     }
 
 }

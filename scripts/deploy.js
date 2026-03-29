@@ -14,6 +14,7 @@ async function writeFrontendConfig(votingAddress) {
     {
       contractAddress: votingAddress,
       chainId: Number(network.chainId),
+      rpcUrl: "http://127.0.0.1:8545",
       abi: artifact.abi,
     },
     null,

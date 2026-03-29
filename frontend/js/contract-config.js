@@ -1,6 +1,7 @@
 window.CONTRACT_CONFIG = {
-  "contractAddress": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+  "contractAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "chainId": 31337,
+  "rpcUrl": "http://127.0.0.1:8545",
   "abi": [
     {
       "inputs": [],
@@ -80,6 +81,19 @@ window.CONTRACT_CONFIG = {
         }
       ],
       "name": "ElectionClosed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "nextRound",
+          "type": "uint256"
+        }
+      ],
+      "name": "ElectionRoundReset",
       "type": "event"
     },
     {
@@ -173,6 +187,19 @@ window.CONTRACT_CONFIG = {
           "internalType": "bool",
           "name": "",
           "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "electionRound",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -395,7 +422,7 @@ window.CONTRACT_CONFIG = {
       "inputs": [
         {
           "internalType": "address",
-          "name": "",
+          "name": "voter",
           "type": "address"
         }
       ],

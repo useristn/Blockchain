@@ -47,25 +47,17 @@ async function main() {
     assert.match(error.message, /not allowed to vote/i);
     console.log("Verified outsider cannot vote.");
   }
-
-  transaction = await voting.connect(voterOne).vote(0);
-  await transaction.wait();
-
-  transaction = await voting.connect(voterTwo).vote(1);
-  await transaction.wait();
-
-  const candidateZero = await voting.getCandidate(0);
-  const candidateOne = await voting.getCandidate(1);
   const summary = await voting.getElectionSummary();
-
-  assert.equal(candidateZero[1], 1n, "Candidate 0 should have 1 vote.");
-  assert.equal(candidateOne[1], 1n, "Candidate 1 should have 1 vote.");
   assert.equal(summary.votersAtSnapshot, 2n, "Snapshot voters should equal whitelisted voters at start.");
+  assert.equal(summary.votesCast, 0n, "Demo setup should leave votes available for frontend testing.");
 
-  console.log("Demo completed successfully.");
-  console.log(`- ${candidateZero[0]}: ${candidateZero[1]} vote(s)`);
-  console.log(`- ${candidateOne[0]}: ${candidateOne[1]} vote(s)`);
+  console.log("Demo state prepared successfully.");
+  console.log("Ready-to-vote accounts for MetaMask:");
+  console.log(`- Voter 1: ${voterOne.address}`);
+  console.log(`- Voter 2: ${voterTwo.address}`);
+  console.log(`- Outsider (should be blocked): ${outsider.address}`);
   console.log(`Snapshot voters: ${summary.votersAtSnapshot}`);
+  console.log(`Votes cast so far: ${summary.votesCast}`);
   console.log(`Audit records: ${summary.auditRecordCount}`);
   console.log(`Owner account: ${owner.address}`);
 }

@@ -24,10 +24,12 @@ const dom = {
 
 const appState = {
   provider: null,
+  readOnlyProvider: null,
   signer: null,
   contract: null,
   readOnlyContract: null,
   account: null,
+  isCorrectNetwork: false,
   isOwner: false,
   isWhitelisted: false,
   hasVoted: false,
@@ -35,6 +37,9 @@ const appState = {
   electionEnded: false,
   snapshotVoterCount: 0,
   pollHandle: null,
+  isSyncing: false,
+  hasPendingSync: false,
+  lastCandidateRenderKey: "",
 };
 
 function escapeHtml(value) {
@@ -98,6 +103,20 @@ async function ensureProvider() {
   return appState.provider;
 }
 
+function ensureReadOnlyProvider() {
+  if (!hasDeployment()) {
+    throw new Error("Contract is not deployed yet.");
+  }
+
+  if (!appState.readOnlyProvider) {
+    appState.readOnlyProvider = new ethers.JsonRpcProvider(
+      window.CONTRACT_CONFIG.rpcUrl || "http://127.0.0.1:8545"
+    );
+  }
+
+  return appState.readOnlyProvider;
+}
+
 async function createContracts() {
   if (!hasDeployment()) {
     appState.contract = null;
@@ -105,20 +124,25 @@ async function createContracts() {
     return;
   }
 
-  const provider = await ensureProvider();
-  appState.readOnlyContract = new ethers.Contract(
-    window.CONTRACT_CONFIG.contractAddress,
-    window.CONTRACT_CONFIG.abi,
-    provider
-  );
-
-  if (appState.account) {
-    appState.signer = await provider.getSigner();
-    appState.contract = new ethers.Contract(
+  if (!appState.readOnlyContract) {
+    const readOnlyProvider = ensureReadOnlyProvider();
+    appState.readOnlyContract = new ethers.Contract(
       window.CONTRACT_CONFIG.contractAddress,
       window.CONTRACT_CONFIG.abi,
-      appState.signer
+      readOnlyProvider
     );
+  }
+
+  if (appState.account && window.ethereum) {
+    if (!appState.contract) {
+      const provider = await ensureProvider();
+      appState.signer = await provider.getSigner();
+      appState.contract = new ethers.Contract(
+        window.CONTRACT_CONFIG.contractAddress,
+        window.CONTRACT_CONFIG.abi,
+        appState.signer
+      );
+    }
     return;
   }
 
@@ -132,11 +156,13 @@ async function updateConnectionState() {
   if (!window.ethereum) {
     dom.networkValue.textContent = "MetaMask missing";
     dom.eligibilityValue.textContent = "Install MetaMask";
+    appState.isCorrectNetwork = false;
     return;
   }
 
   const chainId = await getCurrentChainId();
   const isCorrectNetwork = chainId.toLowerCase() === getTargetChainIdHex().toLowerCase();
+  appState.isCorrectNetwork = isCorrectNetwork;
   dom.networkValue.textContent = isCorrectNetwork
     ? `Hardhat (${parseInt(chainId, 16)})`
     : `Wrong network (${parseInt(chainId, 16)})`;
@@ -167,6 +193,90 @@ async function updateConnectionState() {
   }
 
   dom.eligibilityValue.textContent = appState.isWhitelisted ? "Whitelisted voter" : "Not whitelisted";
+}
+
+function buildReadyStatus() {
+  if (!hasDeployment()) {
+    return {
+      message: "Contract is not deployed yet. Run npm run deploy:localhost after starting the Hardhat node.",
+      tone: "warning",
+    };
+  }
+
+  if (!window.ethereum) {
+    return {
+      message: "Read-only mode is active. Install or unlock MetaMask to send transactions.",
+      tone: "secondary",
+    };
+  }
+
+  if (!appState.account) {
+    return {
+      message: "Contract synced. Connect a wallet to interact with the election.",
+      tone: "secondary",
+    };
+  }
+
+  if (!appState.isCorrectNetwork) {
+    return {
+      message: "Connected wallet is on the wrong network. Switch MetaMask to Hardhat Localhost.",
+      tone: "warning",
+    };
+  }
+
+  if (appState.isOwner) {
+    if (!appState.electionStarted) {
+      return {
+        message: "Owner connected. Whitelist voters or start the election.",
+        tone: "info",
+      };
+    }
+
+    if (appState.electionEnded) {
+      return {
+        message: "Owner connected. Election is closed.",
+        tone: "secondary",
+      };
+    }
+
+    return {
+      message: "Owner connected. Election is active.",
+      tone: "info",
+    };
+  }
+
+  if (!appState.electionStarted) {
+    return {
+      message: "Wallet connected. Waiting for the owner to start the election.",
+      tone: "secondary",
+    };
+  }
+
+  if (appState.electionEnded) {
+    return {
+      message: "Election is closed. Voting is disabled.",
+      tone: "secondary",
+    };
+  }
+
+  if (appState.hasVoted) {
+    return {
+      message: "This wallet has already voted.",
+      tone: "secondary",
+    };
+  }
+
+  if (appState.isWhitelisted) {
+    return {
+      message: "Wallet connected. This account is ready to vote.",
+      tone: "success",
+    };
+  }
+
+  return {
+    message: "Wallet connected, but this account is not whitelisted for the current election.",
+    tone: "warning",
+  };
 }
 
 function renderCandidates(candidates) {
@@ -229,11 +339,37 @@ function renderCandidates(candidates) {
   });
 }
 
+function buildCandidateRenderKey(candidates) {
+  return JSON.stringify({
+    candidates: candidates.map((candidate) => ({
+      id: candidate.id,
+      name: candidate.name,
+      voteCount: candidate.voteCount,
+    })),
+    canVote: Boolean(appState.contract),
+    electionStarted: appState.electionStarted,
+    electionEnded: appState.electionEnded,
+    isWhitelisted: appState.isWhitelisted,
+    hasVoted: appState.hasVoted,
+  });
+}
+
+function renderCandidatesIfChanged(candidates) {
+  const renderKey = buildCandidateRenderKey(candidates);
+  if (renderKey === appState.lastCandidateRenderKey) {
+    return;
+  }
+
+  appState.lastCandidateRenderKey = renderKey;
+  renderCandidates(candidates);
+}
+
 async function loadCandidates() {
   if (!hasDeployment()) {
+    appState.lastCandidateRenderKey = "";
     renderCandidates([]);
     setStatus("Contract is not deployed yet. Run npm run deploy:localhost after starting the Hardhat node.", "warning");
-    return;
+    return [];
   }
 
   await createContracts();
@@ -266,9 +402,9 @@ async function loadCandidates() {
     dom.electionStatusBadge.textContent = "Preparation phase";
   }
 
-  dom.startElectionButton.disabled = appState.electionStarted;
+  dom.startElectionButton.disabled = appState.electionStarted && !appState.electionEnded;
   dom.endElectionButton.disabled = !appState.electionStarted || appState.electionEnded;
-  renderCandidates(candidates);
+  return candidates;
 }
 
 async function refreshAccessState() {
@@ -276,6 +412,7 @@ async function refreshAccessState() {
     appState.isOwner = false;
     appState.isWhitelisted = false;
     appState.hasVoted = false;
+    dom.adminPanel.classList.add("d-none");
     await updateConnectionState();
     return;
   }
@@ -294,12 +431,28 @@ async function refreshAccessState() {
 }
 
 async function syncUi() {
+  if (appState.isSyncing) {
+    appState.hasPendingSync = true;
+    return;
+  }
+
+  appState.isSyncing = true;
+
   try {
-    await loadCandidates();
+    const candidates = await loadCandidates();
     await refreshAccessState();
+    renderCandidatesIfChanged(candidates);
+    const readyStatus = buildReadyStatus();
+    setStatus(readyStatus.message, readyStatus.tone);
   } catch (error) {
     console.error(error);
     setStatus(error.message || "Unable to load data from the contract.", "danger");
+  } finally {
+    appState.isSyncing = false;
+    if (appState.hasPendingSync) {
+      appState.hasPendingSync = false;
+      await syncUi();
+    }
   }
 }
 
@@ -440,6 +593,11 @@ async function startElection() {
   try {
     await ensureReadyForWrite();
 
+    const summary = await appState.readOnlyContract.getElectionSummary();
+    if (summary.started && !summary.ended) {
+      throw new Error("Election is already active. End current election before starting a new round.");
+    }
+
     setStatus("Starting election and snapshotting voters. Confirm in MetaMask.", "warning");
     const transaction = await appState.contract.startElection();
     await transaction.wait();
@@ -473,10 +631,15 @@ function registerProviderListeners() {
 
   window.ethereum.on("accountsChanged", async (accounts) => {
     appState.account = accounts[0] || null;
+    appState.signer = null;
+    appState.contract = null;
     await syncUi();
   });
 
   window.ethereum.on("chainChanged", async () => {
+    appState.provider = null;
+    appState.signer = null;
+    appState.contract = null;
     await syncUi();
   });
 }

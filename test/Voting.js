@@ -65,6 +65,26 @@ describe("Voting", function () {
     await expect(voting.whitelistVoter(outsider.address)).to.be.revertedWith("Election parameters are frozen");
   });
 
+  it("allows owner to configure and start a new round after ending election", async function () {
+    const { voting, voter, secondVoter } = await deployVotingFixture();
+
+    await voting.whitelistVoter(voter.address);
+    await voting.startElection();
+    await voting.connect(voter).vote(0);
+    await voting.endElection();
+
+    await voting.addCandidate("Carol Lee");
+    await voting.whitelistVoter(secondVoter.address);
+
+    await expect(voting.startElection()).to.emit(voting, "ElectionStarted");
+
+    const firstCandidate = await voting.getCandidate(0);
+    expect(firstCandidate.voteCount).to.equal(0n);
+
+    await expect(voting.connect(voter).vote(1)).to.emit(voting, "Voted").withArgs(voter.address, 1);
+    await expect(voting.connect(secondVoter).vote(2)).to.emit(voting, "Voted").withArgs(secondVoter.address, 2);
+  });
+
   it("rejects a voter that is not whitelisted", async function () {
     const { voting, voter, outsider } = await deployVotingFixture();
 
@@ -108,6 +128,19 @@ describe("Voting", function () {
     expect(summary.votesCast).to.equal(1n);
     expect(summary.candidateCount).to.equal(2n);
     expect(summary.auditRecordCount).to.equal(6n);
+  });
+
+  it("tracks hasVoted by current election round", async function () {
+    const { voting, voter } = await deployVotingFixture();
+
+    await voting.whitelistVoter(voter.address);
+    await voting.startElection();
+    await voting.connect(voter).vote(0);
+    expect(await voting.hasVoted(voter.address)).to.equal(true);
+
+    await voting.endElection();
+    await voting.startElection();
+    expect(await voting.hasVoted(voter.address)).to.equal(false);
   });
 
   it("returns all candidates for frontend rendering", async function () {
