@@ -1,14 +1,16 @@
 :root {
-  --bg-deep: #07111f;
-  --bg-mid: #0d2035;
-  --panel: rgba(255, 255, 255, 0.08);
-  --panel-border: rgba(255, 255, 255, 0.14);
-  --text-main: #f4f7fb;
-  --text-muted: #acc0d5;
-  --accent: #ff8a3d;
-  --accent-dark: #d45d16;
-  --success: #31c48d;
-  --warning: #ffd166;
+  --bg-top: #081827;
+  --bg-bottom: #112d40;
+  --panel: rgba(9, 22, 38, 0.66);
+  --panel-strong: rgba(8, 18, 31, 0.82);
+  --panel-border: rgba(201, 225, 255, 0.18);
+  --text-main: #ecf5ff;
+  --text-muted: #9fc4df;
+  --accent: #ffb347;
+  --accent-ink: #2a1800;
+  --accent-cool: #7de2d1;
+  --danger: #ff7b6b;
+  --success: #5dd39e;
 }
 
 * {
@@ -20,13 +22,54 @@ body {
   min-height: 100vh;
   font-family: "Space Grotesk", sans-serif;
   color: var(--text-main);
-  background:
-    radial-gradient(circle at top left, rgba(255, 138, 61, 0.18), transparent 26%),
-    radial-gradient(circle at bottom right, rgba(49, 196, 141, 0.12), transparent 32%),
-    linear-gradient(135deg, var(--bg-deep), var(--bg-mid));
+  background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+  overflow-x: hidden;
+}
+
+.ambient-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+  animation: drift 14s ease-in-out infinite alternate;
+}
+
+.orb-one {
+  width: 380px;
+  height: 380px;
+  top: -120px;
+  left: -80px;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 179, 71, 0.42), transparent 64%);
+}
+
+.orb-two {
+  width: 520px;
+  height: 520px;
+  bottom: -180px;
+  right: -140px;
+  background: radial-gradient(circle at 45% 45%, rgba(125, 226, 209, 0.34), transparent 66%);
+  animation-delay: 1.6s;
+}
+
+.grid-glow {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(circle at center, black 30%, transparent 78%);
 }
 
 .page-shell {
+  position: relative;
+  z-index: 1;
   min-height: 100vh;
   backdrop-filter: blur(10px);
 }
@@ -38,12 +81,13 @@ body {
 .candidate-card {
   border: 1px solid var(--panel-border);
   background: var(--panel);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(6px);
 }
 
 .hero-panel,
 .panel {
-  border-radius: 28px;
+  border-radius: 26px;
   padding: 1.5rem;
 }
 
@@ -52,6 +96,7 @@ body {
   grid-template-columns: 1.6fr 1fr;
   gap: 1.5rem;
   align-items: center;
+  animation: rise 550ms ease-out;
 }
 
 .hero-copy,
@@ -75,16 +120,16 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), #ffb169);
+  background: linear-gradient(145deg, var(--accent), #ffd38f);
   border: none;
-  color: #16202b;
+  color: var(--accent-ink);
   font-weight: 700;
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-  background: linear-gradient(135deg, #ff9d57, #ffc78e);
-  color: #16202b;
+  background: linear-gradient(145deg, #ffc266, #ffe3b7);
+  color: var(--accent-ink);
 }
 
 .btn-outline-light,
@@ -93,12 +138,33 @@ body {
   border-width: 1px;
 }
 
+.btn-outline-light {
+  color: var(--text-main);
+  border-color: rgba(215, 232, 248, 0.55);
+}
+
+.btn-outline-light:hover,
+.btn-outline-light:focus {
+  color: #08233a;
+  border-color: transparent;
+  background: linear-gradient(135deg, #d0f2ea, #a7dfd3);
+}
+
+.btn-dark {
+  background: linear-gradient(135deg, var(--panel-strong), #11324d);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
 .status-card,
 .action-card,
 .candidate-card {
   border-radius: 24px;
   padding: 1.25rem;
   height: 100%;
+}
+
+.action-card {
+  background: linear-gradient(170deg, rgba(11, 28, 46, 0.9), rgba(8, 18, 31, 0.7));
 }
 
 .status-value {
@@ -110,6 +176,7 @@ body {
 .status-banner {
   border-radius: 18px;
   border: 1px solid transparent;
+  background-color: rgba(4, 13, 23, 0.75);
 }
 
 .panel-heading {
@@ -125,6 +192,7 @@ body {
   gap: 1rem;
   position: relative;
   overflow: hidden;
+  animation: rise 480ms ease-out;
 }
 
 .candidate-card::after {
@@ -134,7 +202,7 @@ body {
   width: 140px;
   height: 140px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 138, 61, 0.22), transparent 65%);
+  background: radial-gradient(circle, rgba(255, 179, 71, 0.24), transparent 65%);
 }
 
 .candidate-rank {
@@ -144,12 +212,12 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   font-weight: 700;
 }
 
 .vote-count {
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 700;
 }
 
@@ -159,11 +227,44 @@ body {
 }
 
 .progress-bar {
-  background: linear-gradient(135deg, var(--success), #58d9a9);
+  background: linear-gradient(135deg, var(--success), var(--accent-cool));
 }
 
 .btn-vote[disabled] {
   opacity: 0.5;
+}
+
+.form-control {
+  background-color: rgba(8, 20, 35, 0.88);
+  color: var(--text-main);
+  border-color: rgba(201, 225, 255, 0.3);
+}
+
+.form-control:focus {
+  border-color: rgba(255, 179, 71, 0.82);
+  box-shadow: 0 0 0 0.2rem rgba(255, 179, 71, 0.2);
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translateY(0) translateX(0);
+  }
+
+  to {
+    transform: translateY(28px) translateX(22px);
+  }
 }
 
 @media (max-width: 991px) {

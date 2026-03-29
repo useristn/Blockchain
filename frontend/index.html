@@ -19,14 +19,19 @@
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
+    <div class="ambient-layer" aria-hidden="true">
+      <span class="orb orb-one"></span>
+      <span class="orb orb-two"></span>
+      <span class="grid-glow"></span>
+    </div>
     <div class="page-shell">
       <main class="container py-5">
         <section class="hero-panel mb-4">
           <div>
             <p class="eyebrow mb-2">Blockchain Voting System</p>
-            <h1 class="display-5 mb-3">Transparent local election demo on Hardhat</h1>
+            <h1 class="display-5 mb-3">Precision voting console for local blockchain demos</h1>
             <p class="hero-copy mb-0">
-              Connect MetaMask, whitelist voters, cast one vote per wallet, and watch tally results update on demand.
+              Connect MetaMask, whitelist voters, cast exactly one vote per wallet, then watch live tally analytics update in real time.
             </p>
           </div>
           <div class="hero-actions">
@@ -80,14 +85,18 @@
               <form id="whitelistForm" class="action-card">
                 <label class="form-label" for="voterAddress">Whitelist voter</label>
                 <input id="voterAddress" class="form-control mb-3" type="text" placeholder="0x..." required />
+                <p class="text-muted small mb-3">Test accounts are listed in tai-khoan-test-local.md after each deploy.</p>
                 <button class="btn btn-dark w-100" type="submit">Grant voting access</button>
               </form>
             </div>
             <div class="col-lg-4">
               <div class="action-card">
-                <label class="form-label">Close election</label>
-                <p class="text-muted small mb-3">This blocks any further vote transactions.</p>
-                <button id="endElectionButton" class="btn btn-outline-danger w-100" type="button">End election</button>
+                <label class="form-label">Election lifecycle</label>
+                <p class="text-muted small mb-3">Start locks parameters and snapshots voters. End blocks further voting.</p>
+                <div class="d-grid gap-2">
+                  <button id="startElectionButton" class="btn btn-primary" type="button">Start election</button>
+                  <button id="endElectionButton" class="btn btn-outline-danger" type="button">End election</button>
+                </div>
               </div>
             </div>
           </div>

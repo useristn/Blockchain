@@ -14,7 +14,7 @@ describe("Voting", function () {
     return { voting, owner, voter, secondVoter, outsider };
   }
 
-  it("lets the owner add candidates", async function () {
+  it("lets the owner add candidates before election starts", async function () {
     const { voting } = await deployVotingFixture();
 
     expect(await voting.getCandidatesCount()).to.equal(2);
@@ -34,12 +34,18 @@ describe("Voting", function () {
     await expect(voting.connect(outsider).whitelistVoter(outsider.address)).to.be.revertedWith(
       "Only owner can call this function"
     );
+
+    await expect(voting.connect(outsider).startElection()).to.be.revertedWith("Only owner can call this function");
   });
 
-  it("allows exactly one vote for a whitelisted voter", async function () {
-    const { voting, voter } = await deployVotingFixture();
+  it("enforces election snapshot and one vote per whitelisted voter", async function () {
+    const { voting, voter, secondVoter } = await deployVotingFixture();
 
     await voting.whitelistVoter(voter.address);
+    await voting.whitelistVoter(secondVoter.address);
+
+    await expect(voting.startElection()).to.emit(voting, "ElectionStarted");
+
     await expect(voting.connect(voter).vote(1)).to.emit(voting, "Voted").withArgs(voter.address, 1);
 
     const candidate = await voting.getCandidate(1);
@@ -49,19 +55,59 @@ describe("Voting", function () {
     await expect(voting.connect(voter).vote(1)).to.be.revertedWith("You have already voted");
   });
 
-  it("rejects a voter that is not whitelisted", async function () {
+  it("freezes election parameters after election starts", async function () {
     const { voting, outsider } = await deployVotingFixture();
+
+    await voting.whitelistVoter(outsider.address);
+    await voting.startElection();
+
+    await expect(voting.addCandidate("Carol Lee")).to.be.revertedWith("Election parameters are frozen");
+    await expect(voting.whitelistVoter(outsider.address)).to.be.revertedWith("Election parameters are frozen");
+  });
+
+  it("rejects a voter that is not whitelisted", async function () {
+    const { voting, voter, outsider } = await deployVotingFixture();
+
+    await voting.whitelistVoter(voter.address);
+    await voting.startElection();
 
     await expect(voting.connect(outsider).vote(0)).to.be.revertedWith("You are not allowed to vote");
   });
 
-  it("prevents voting after the owner closes the election", async function () {
+  it("prevents voting before start and after close", async function () {
     const { voting, voter } = await deployVotingFixture();
 
     await voting.whitelistVoter(voter.address);
+
+    await expect(voting.connect(voter).vote(0)).to.be.revertedWith("Election has not started");
+
+    await voting.startElection();
     await voting.endElection();
 
     await expect(voting.connect(voter).vote(0)).to.be.revertedWith("Election has ended");
+  });
+
+  it("exposes standardized audit trail and summary", async function () {
+    const { voting, voter } = await deployVotingFixture();
+
+    await voting.whitelistVoter(voter.address);
+    await voting.startElection();
+    await voting.connect(voter).vote(0);
+    await voting.endElection();
+
+    const auditCount = await voting.getAuditTrailCount();
+    expect(auditCount).to.equal(6n);
+
+    const startRecord = await voting.getAuditRecord(3);
+    expect(startRecord.actionType).to.equal(3);
+
+    const summary = await voting.getElectionSummary();
+    expect(summary.started).to.equal(true);
+    expect(summary.ended).to.equal(true);
+    expect(summary.votersAtSnapshot).to.equal(1n);
+    expect(summary.votesCast).to.equal(1n);
+    expect(summary.candidateCount).to.equal(2n);
+    expect(summary.auditRecordCount).to.equal(6n);
   });
 
   it("returns all candidates for frontend rendering", async function () {

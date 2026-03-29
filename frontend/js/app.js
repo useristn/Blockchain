@@ -1,6 +1,8 @@
 const { ethers } = window;
 
 const POLL_INTERVAL_MS = 5000;
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const MAX_CANDIDATE_NAME_LENGTH = 64;
 
 const dom = {
   connectWalletButton: document.getElementById("connectWalletButton"),
@@ -15,6 +17,7 @@ const dom = {
   candidateName: document.getElementById("candidateName"),
   whitelistForm: document.getElementById("whitelistForm"),
   voterAddress: document.getElementById("voterAddress"),
+  startElectionButton: document.getElementById("startElectionButton"),
   endElectionButton: document.getElementById("endElectionButton"),
   electionStatusBadge: document.getElementById("electionStatusBadge"),
 };
@@ -28,9 +31,20 @@ const appState = {
   isOwner: false,
   isWhitelisted: false,
   hasVoted: false,
+  electionStarted: false,
   electionEnded: false,
+  snapshotVoterCount: 0,
   pollHandle: null,
 };
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 function hasDeployment() {
   return Boolean(window.CONTRACT_CONFIG && window.CONTRACT_CONFIG.contractAddress);
@@ -51,6 +65,25 @@ function setStatus(message, tone = "secondary") {
 
 function getTargetChainIdHex() {
   return `0x${Number(window.CONTRACT_CONFIG?.chainId || 31337).toString(16)}`;
+}
+
+async function getCurrentChainId() {
+  if (!window.ethereum) {
+    return null;
+  }
+
+  return window.ethereum.request({ method: "eth_chainId" });
+}
+
+async function ensureOnConfiguredNetwork() {
+  const chainId = await getCurrentChainId();
+  if (!chainId) {
+    throw new Error("MetaMask is required in the browser.");
+  }
+
+  if (chainId.toLowerCase() !== getTargetChainIdHex().toLowerCase()) {
+    throw new Error("Wrong network. Please switch to Hardhat before sending transactions.");
+  }
 }
 
 async function ensureProvider() {
@@ -86,7 +119,11 @@ async function createContracts() {
       window.CONTRACT_CONFIG.abi,
       appState.signer
     );
+    return;
   }
+
+  appState.signer = null;
+  appState.contract = null;
 }
 
 async function updateConnectionState() {
@@ -98,9 +135,11 @@ async function updateConnectionState() {
     return;
   }
 
-  const chainId = await window.ethereum.request({ method: "eth_chainId" });
+  const chainId = await getCurrentChainId();
   const isCorrectNetwork = chainId.toLowerCase() === getTargetChainIdHex().toLowerCase();
-  dom.networkValue.textContent = isCorrectNetwork ? `Hardhat (${parseInt(chainId, 16)})` : `Wrong network (${parseInt(chainId, 16)})`;
+  dom.networkValue.textContent = isCorrectNetwork
+    ? `Hardhat (${parseInt(chainId, 16)})`
+    : `Wrong network (${parseInt(chainId, 16)})`;
 
   if (!appState.account) {
     dom.eligibilityValue.textContent = "Read only";
@@ -108,7 +147,17 @@ async function updateConnectionState() {
   }
 
   if (appState.isOwner) {
+    if (!appState.electionStarted) {
+      dom.eligibilityValue.textContent = "Owner · Ready to start";
+      return;
+    }
+
     dom.eligibilityValue.textContent = appState.electionEnded ? "Owner · Closed" : "Owner · Admin access";
+    return;
+  }
+
+  if (!appState.electionStarted) {
+    dom.eligibilityValue.textContent = "Waiting for election start";
     return;
   }
 
@@ -138,7 +187,12 @@ function renderCandidates(candidates) {
   dom.candidateGrid.innerHTML = candidates
     .map((candidate) => {
       const percentage = totalVotes === 0 ? 0 : Math.round((candidate.voteCount / totalVotes) * 100);
-      const disabled = !appState.contract || !appState.isWhitelisted || appState.hasVoted || appState.electionEnded;
+      const disabled =
+        !appState.contract ||
+        !appState.electionStarted ||
+        !appState.isWhitelisted ||
+        appState.hasVoted ||
+        appState.electionEnded;
 
       return `
         <div class="col-md-6 col-xl-4">
@@ -148,7 +202,7 @@ function renderCandidates(candidates) {
               <span class="badge text-bg-light">Candidate #${candidate.id}</span>
             </div>
             <div>
-              <h3 class="h4 mb-2">${candidate.name}</h3>
+              <h3 class="h4 mb-2">${escapeHtml(candidate.name)}</h3>
               <p class="progress-label mb-0">One wallet can cast exactly one vote.</p>
             </div>
             <div>
@@ -159,7 +213,7 @@ function renderCandidates(candidates) {
               <div class="progress-label mt-2">${percentage}% of current tally</div>
             </div>
             <button class="btn btn-primary btn-vote mt-auto" data-candidate-id="${candidate.id}" ${disabled ? "disabled" : ""}>
-              ${appState.electionEnded ? "Election closed" : "Vote for this candidate"}
+              ${appState.electionEnded ? "Election closed" : appState.electionStarted ? "Vote for this candidate" : "Not started"}
             </button>
           </article>
         </div>
@@ -196,9 +250,24 @@ async function loadCandidates() {
     })
   );
 
-  appState.electionEnded = await contract.electionEnded();
-  dom.electionStatusBadge.className = `badge ${appState.electionEnded ? "text-bg-danger" : "text-bg-success"}`;
-  dom.electionStatusBadge.textContent = appState.electionEnded ? "Election closed" : "Election active";
+  const summary = await contract.getElectionSummary();
+  appState.electionStarted = summary.started;
+  appState.electionEnded = summary.ended;
+  appState.snapshotVoterCount = Number(summary.votersAtSnapshot);
+
+  if (appState.electionEnded) {
+    dom.electionStatusBadge.className = "badge text-bg-danger";
+    dom.electionStatusBadge.textContent = "Election closed";
+  } else if (appState.electionStarted) {
+    dom.electionStatusBadge.className = "badge text-bg-success";
+    dom.electionStatusBadge.textContent = `Election active · Snapshot ${appState.snapshotVoterCount}`;
+  } else {
+    dom.electionStatusBadge.className = "badge text-bg-secondary";
+    dom.electionStatusBadge.textContent = "Preparation phase";
+  }
+
+  dom.startElectionButton.disabled = appState.electionStarted;
+  dom.endElectionButton.disabled = !appState.electionStarted || appState.electionEnded;
   renderCandidates(candidates);
 }
 
@@ -232,6 +301,14 @@ async function syncUi() {
     console.error(error);
     setStatus(error.message || "Unable to load data from the contract.", "danger");
   }
+}
+
+async function ensureReadyForWrite() {
+  if (!appState.account || !appState.contract) {
+    throw new Error("Connect your wallet before sending transactions.");
+  }
+
+  await ensureOnConfiguredNetwork();
 }
 
 async function connectWallet() {
@@ -287,8 +364,10 @@ async function switchNetwork() {
 
 async function submitVote(candidateId) {
   try {
-    if (!appState.contract) {
-      throw new Error("Connect a wallet before sending transactions.");
+    await ensureReadyForWrite();
+
+    if (!Number.isInteger(candidateId) || candidateId < 0) {
+      throw new Error("Invalid candidate id.");
     }
 
     setStatus("Submitting vote transaction. Confirm it in MetaMask.", "warning");
@@ -306,9 +385,15 @@ async function addCandidate(event) {
   event.preventDefault();
 
   try {
+    await ensureReadyForWrite();
+
     const name = dom.candidateName.value.trim();
     if (!name) {
       throw new Error("Candidate name is required.");
+    }
+
+    if (name.length > MAX_CANDIDATE_NAME_LENGTH) {
+      throw new Error(`Candidate name must be <= ${MAX_CANDIDATE_NAME_LENGTH} characters.`);
     }
 
     setStatus("Creating candidate. Confirm the transaction in MetaMask.", "warning");
@@ -327,9 +412,16 @@ async function whitelistVoter(event) {
   event.preventDefault();
 
   try {
-    const voterAddress = dom.voterAddress.value.trim();
-    if (!ethers.isAddress(voterAddress)) {
+    await ensureReadyForWrite();
+
+    const voterAddressInput = dom.voterAddress.value.trim();
+    if (!ethers.isAddress(voterAddressInput)) {
       throw new Error("Enter a valid wallet address.");
+    }
+
+    const voterAddress = ethers.getAddress(voterAddressInput);
+    if (voterAddress.toLowerCase() === ZERO_ADDRESS) {
+      throw new Error("Zero address is not allowed.");
     }
 
     setStatus("Whitelisting voter. Confirm the transaction in MetaMask.", "warning");
@@ -344,8 +436,25 @@ async function whitelistVoter(event) {
   }
 }
 
+async function startElection() {
+  try {
+    await ensureReadyForWrite();
+
+    setStatus("Starting election and snapshotting voters. Confirm in MetaMask.", "warning");
+    const transaction = await appState.contract.startElection();
+    await transaction.wait();
+    setStatus("Election started. Parameters are now frozen.", "success");
+    await syncUi();
+  } catch (error) {
+    console.error(error);
+    setStatus(error.shortMessage || error.reason || error.message || "Unable to start election.", "danger");
+  }
+}
+
 async function endElection() {
   try {
+    await ensureReadyForWrite();
+
     setStatus("Closing the election. Confirm the transaction in MetaMask.", "warning");
     const transaction = await appState.contract.endElection();
     await transaction.wait();
@@ -389,6 +498,7 @@ async function bootstrap() {
   dom.switchNetworkButton.addEventListener("click", switchNetwork);
   dom.candidateForm.addEventListener("submit", addCandidate);
   dom.whitelistForm.addEventListener("submit", whitelistVoter);
+  dom.startElectionButton.addEventListener("click", startElection);
   dom.endElectionButton.addEventListener("click", endElection);
 
   registerProviderListeners();
