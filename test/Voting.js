@@ -151,4 +151,11 @@ describe("Voting", function () {
     expect(candidates[0].name).to.equal("Alice Johnson");
     expect(candidates[1].name).to.equal("Bob Smith");
   });
+
+  it("hasVoted returns false for all addresses before first election", async function () {
+    const { voting, voter, outsider } = await deployVotingFixture();
+
+    expect(await voting.hasVoted(voter.address)).to.equal(false);
+    expect(await voting.hasVoted(outsider.address)).to.equal(false);
+  });
 });

@@ -16,103 +16,215 @@
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous"
     />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
     <div class="ambient-layer" aria-hidden="true">
       <span class="orb orb-one"></span>
       <span class="orb orb-two"></span>
+      <span class="orb orb-three"></span>
       <span class="grid-glow"></span>
     </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1090"></div>
+
     <div class="page-shell">
-      <main class="container py-5">
+      <header class="top-bar">
+        <div class="container d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-box-seam-fill top-bar-logo"></i>
+            <span class="top-bar-title">BlockVote</span>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <span id="roundBadge" class="badge badge-round">Round —</span>
+            <span id="livePulse" class="live-pulse" title="Polling active"><span class="pulse-dot"></span> Live</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="container main-content">
+        <!-- Hero -->
         <section class="hero-panel mb-4">
           <div>
-            <p class="eyebrow mb-2">Blockchain Voting System</p>
+            <p class="eyebrow mb-2"><i class="bi bi-shield-lock-fill me-1"></i>Blockchain Voting System</p>
             <h1 class="display-5 mb-3">Precision voting console for local blockchain demos</h1>
             <p class="hero-copy mb-0">
               Connect MetaMask, whitelist voters, cast exactly one vote per wallet, then watch live tally analytics update in real time.
             </p>
           </div>
           <div class="hero-actions">
-            <button id="connectWalletButton" class="btn btn-primary btn-lg">Connect Wallet</button>
-            <button id="switchNetworkButton" class="btn btn-outline-light btn-lg">Switch to Hardhat</button>
+            <button id="connectWalletButton" class="btn btn-primary btn-lg"><i class="bi bi-wallet2 me-2"></i>Connect Wallet</button>
+            <button id="switchNetworkButton" class="btn btn-outline-light btn-lg"><i class="bi bi-arrow-left-right me-2"></i>Switch to Hardhat</button>
           </div>
         </section>
 
+        <!-- Status cards -->
         <section class="row g-4 mb-4">
-          <div class="col-lg-4">
+          <div class="col-lg-3 col-md-6">
             <div class="status-card h-100">
+              <div class="status-icon"><i class="bi bi-person-circle"></i></div>
               <span class="status-label">Connected account</span>
               <strong id="accountValue" class="status-value">Not connected</strong>
             </div>
           </div>
-          <div class="col-lg-4">
+          <div class="col-lg-3 col-md-6">
             <div class="status-card h-100">
+              <div class="status-icon"><i class="bi bi-hdd-network"></i></div>
               <span class="status-label">Network</span>
               <strong id="networkValue" class="status-value">Unknown</strong>
             </div>
           </div>
-          <div class="col-lg-4">
+          <div class="col-lg-3 col-md-6">
             <div class="status-card h-100">
+              <div class="status-icon"><i class="bi bi-patch-check"></i></div>
               <span class="status-label">Voter status</span>
               <strong id="eligibilityValue" class="status-value">Read only</strong>
             </div>
           </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="status-card h-100">
+              <div class="status-icon"><i class="bi bi-bar-chart-line"></i></div>
+              <span class="status-label">Turnout</span>
+              <strong id="turnoutValue" class="status-value">—</strong>
+            </div>
+          </div>
         </section>
 
+        <!-- Status banner -->
         <div id="statusBanner" class="alert alert-secondary status-banner" role="alert">
-          Waiting for contract deployment.
+          <i class="bi bi-info-circle me-2"></i><span id="statusText">Waiting for contract deployment.</span>
         </div>
 
+        <!-- Election stats row -->
+        <section id="statsPanel" class="row g-4 mb-4 d-none">
+          <div class="col-md-3 col-6">
+            <div class="stat-chip">
+              <span class="stat-number" id="statTotalVotes">0</span>
+              <span class="stat-label">Total votes</span>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-chip">
+              <span class="stat-number" id="statCandidates">0</span>
+              <span class="stat-label">Candidates</span>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-chip">
+              <span class="stat-number" id="statSnapshot">0</span>
+              <span class="stat-label">Snapshot voters</span>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-chip">
+              <span class="stat-number" id="statAudit">0</span>
+              <span class="stat-label">Audit records</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Admin panel -->
         <section id="adminPanel" class="panel mb-4 d-none">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow mb-2">Owner controls</p>
+              <p class="eyebrow mb-2"><i class="bi bi-gear-fill me-1"></i>Owner controls</p>
               <h2 class="h4 mb-0">Admin actions</h2>
             </div>
-            <span class="badge text-bg-warning">Owner only</span>
+            <span class="badge text-bg-warning"><i class="bi bi-key-fill me-1"></i>Owner only</span>
           </div>
           <div class="row g-4 mt-1">
             <div class="col-lg-4">
               <form id="candidateForm" class="action-card">
+                <div class="action-card-icon"><i class="bi bi-person-plus-fill"></i></div>
                 <label class="form-label" for="candidateName">Add candidate</label>
-                <input id="candidateName" class="form-control mb-3" type="text" placeholder="Candidate name" required />
-                <button class="btn btn-dark w-100" type="submit">Create candidate</button>
+                <input id="candidateName" class="form-control mb-3" type="text" placeholder="Enter candidate name" required maxlength="64" />
+                <button class="btn btn-accent w-100" type="submit"><i class="bi bi-plus-circle me-1"></i>Create candidate</button>
               </form>
             </div>
             <div class="col-lg-4">
               <form id="whitelistForm" class="action-card">
+                <div class="action-card-icon"><i class="bi bi-person-check-fill"></i></div>
                 <label class="form-label" for="voterAddress">Whitelist voter</label>
                 <input id="voterAddress" class="form-control mb-3" type="text" placeholder="0x..." required />
-                <p class="text-muted small mb-3">Test accounts are listed in tai-khoan-test-local.md after each deploy.</p>
-                <button class="btn btn-dark w-100" type="submit">Grant voting access</button>
+                <p class="text-muted small mb-3">Test accounts listed in tai-khoan-test-local.md after each deploy.</p>
+                <button class="btn btn-accent w-100" type="submit"><i class="bi bi-check2-circle me-1"></i>Grant access</button>
               </form>
             </div>
             <div class="col-lg-4">
               <div class="action-card">
+                <div class="action-card-icon"><i class="bi bi-lightning-charge-fill"></i></div>
                 <label class="form-label">Election lifecycle</label>
                 <p class="text-muted small mb-3">Start locks parameters and snapshots voters. End blocks further voting.</p>
                 <div class="d-grid gap-2">
-                  <button id="startElectionButton" class="btn btn-primary" type="button">Start election</button>
-                  <button id="endElectionButton" class="btn btn-outline-danger" type="button">End election</button>
+                  <button id="startElectionButton" class="btn btn-primary" type="button"><i class="bi bi-play-fill me-1"></i>Start election</button>
+                  <button id="endElectionButton" class="btn btn-outline-danger" type="button"><i class="bi bi-stop-fill me-1"></i>End election</button>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="panel">
+        <!-- Winner banner -->
+        <section id="winnerBanner" class="winner-banner mb-4 d-none">
+          <div class="winner-trophy"><i class="bi bi-trophy-fill"></i></div>
+          <div>
+            <p class="eyebrow mb-1">Election result</p>
+            <h2 class="h3 mb-1" id="winnerName">—</h2>
+            <p class="mb-0 winner-detail" id="winnerDetail">—</p>
+          </div>
+        </section>
+
+        <!-- Candidate grid -->
+        <section class="panel mb-4">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow mb-2">Live tally board</p>
+              <p class="eyebrow mb-2"><i class="bi bi-clipboard2-data-fill me-1"></i>Live tally board</p>
               <h2 class="h4 mb-0">Candidates</h2>
             </div>
             <span id="electionStatusBadge" class="badge text-bg-secondary">Loading...</span>
           </div>
           <div id="candidateGrid" class="row g-4 mt-1"></div>
         </section>
+
+        <!-- Audit trail -->
+        <section id="auditPanel" class="panel mb-4 d-none">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow mb-2"><i class="bi bi-journal-text me-1"></i>On-chain history</p>
+              <h2 class="h4 mb-0">Audit trail</h2>
+            </div>
+            <button id="toggleAuditButton" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-down me-1"></i>Show</button>
+          </div>
+          <div id="auditBody" class="audit-body mt-3 d-none">
+            <div class="table-responsive">
+              <table class="table table-dark table-sm audit-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Action</th>
+                    <th>Actor</th>
+                    <th>Subject</th>
+                    <th>Ref</th>
+                    <th>Block</th>
+                  </tr>
+                </thead>
+                <tbody id="auditTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <footer class="site-footer">
+        <div class="container text-center">
+          <p class="mb-0"><i class="bi bi-box-seam me-1"></i>BlockVote &mdash; Hardhat + Solidity + Ethers.js</p>
+        </div>
+      </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>

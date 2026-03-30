@@ -142,7 +142,7 @@ contract Voting {
     }
 
     function hasVoted(address voter) external view returns (bool) {
-        return lastVotedRound[voter] == electionRound;
+        return electionRound > 0 && lastVotedRound[voter] == electionRound;
     }
 
     function getCandidate(uint256 candidateId) external view returns (string memory name, uint256 voteCount) {
