@@ -88,7 +88,7 @@ function hasDeployment() {
 
 function shortenAddress(address) {
   if (!address) return "Not connected";
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  return `${address.slice(0, 6)}...${address.slice(-6)}`;
 }
 
 function setStatus(message, tone = "secondary") {
@@ -230,8 +230,22 @@ async function createContracts() {
 
 /* ── UI State ── */
 
+function updateWalletButton() {
+  if (appState.account) {
+    const short = shortenAddress(appState.account);
+    dom.connectWalletButton.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i>Connected · ${escapeHtml(short)}`;
+    dom.connectWalletButton.classList.add("btn-connected");
+    dom.connectWalletButton.classList.remove("btn-primary");
+  } else {
+    dom.connectWalletButton.innerHTML = '<i class="bi bi-wallet2 me-2"></i>Connect Wallet';
+    dom.connectWalletButton.classList.remove("btn-connected");
+    dom.connectWalletButton.classList.add("btn-primary");
+  }
+}
+
 async function updateConnectionState() {
   dom.accountValue.textContent = shortenAddress(appState.account);
+  updateWalletButton();
 
   if (!window.ethereum) {
     dom.networkValue.textContent = "MetaMask missing";

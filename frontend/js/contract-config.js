@@ -1,5 +1,5 @@
 window.CONTRACT_CONFIG = {
-  "contractAddress": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+  "contractAddress": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
   "chainId": 31337,
   "rpcUrl": "http://127.0.0.1:8545",
   "abi": [
