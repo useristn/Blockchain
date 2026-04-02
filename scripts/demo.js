@@ -68,11 +68,11 @@ async function main() {
 
   tx = await voting.connect(voterOne).vote(0);
   await tx.wait();
-  console.log(`✔ Voter 1 voted for candidate #0 (Alice Johnson)`);
+  console.log(`✔ Voter 1 voted for candidate #0 (Nguyễn Thế Huy)`);
 
   tx = await voting.connect(voterTwo).vote(1);
   await tx.wait();
-  console.log(`✔ Voter 2 voted for candidate #1 (Bob Smith)`);
+  console.log(`✔ Voter 2 voted for candidate #1 (Võ Huy Khánh)`);
 
   // Verify double-vote protection
   try {
@@ -128,11 +128,11 @@ async function main() {
   // Cast one vote in round 2 for different results
   tx = await voting.connect(voterOne).vote(2);
   await tx.wait();
-  console.log(`✔ Voter 1 voted for candidate #2 (Carol Lee) in round 2`);
+  console.log(`✔ Voter 1 voted for candidate #2 (Trương Thanh Nga) in round 2`);
 
   tx = await voting.connect(voterTwo).vote(2);
   await tx.wait();
-  console.log(`✔ Voter 2 voted for candidate #2 (Carol Lee) in round 2`);
+  console.log(`✔ Voter 2 voted for candidate #2 (Trương Thanh Nga) in round 2`);
 
   tx = await voting.endElection();
   await tx.wait();

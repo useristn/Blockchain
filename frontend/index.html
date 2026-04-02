@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Voting DApp Dashboard</title>
+    <title>Bầu cử Đại biểu Quốc hội Khóa XVI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -37,8 +37,8 @@
       <header class="top-bar">
         <div class="container d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-box-seam-fill top-bar-logo"></i>
-            <span class="top-bar-title">BlockVote</span>
+            <i class="bi bi-bank2 top-bar-logo"></i>
+            <span class="top-bar-title">Bầu cử ĐBQH Khóa XVI</span>
           </div>
           <div class="d-flex align-items-center gap-3">
             <span id="roundBadge" class="badge badge-round">Round —</span>
@@ -51,15 +51,15 @@
         <!-- Hero -->
         <section class="hero-panel mb-4">
           <div>
-            <p class="eyebrow mb-2"><i class="bi bi-shield-lock-fill me-1"></i>Blockchain Voting System</p>
-            <h1 class="display-5 mb-3">Precision voting console for local blockchain demos</h1>
+            <p class="eyebrow mb-2"><i class="bi bi-shield-lock-fill me-1"></i>Hệ thống bầu cử trên Blockchain</p>
+            <h1 class="display-5 mb-3">Bầu cử Đại biểu Quốc hội<br>nước Cộng hòa Xã hội Chủ nghĩa Việt Nam<br>Khóa XVI</h1>
             <p class="hero-copy mb-0">
-              Connect MetaMask, whitelist voters, cast exactly one vote per wallet, then watch live tally analytics update in real time.
+              Kết nối MetaMask, xác thực cử tri, bỏ phiếu chính xác một lần duy nhất mỗi ví và theo dõi kết quả kiểm phiếu trực tiếp theo thời gian thực.
             </p>
           </div>
           <div class="hero-actions">
-            <button id="connectWalletButton" class="btn btn-primary btn-lg"><i class="bi bi-wallet2 me-2"></i>Connect Wallet</button>
-            <button id="switchNetworkButton" class="btn btn-outline-light btn-lg"><i class="bi bi-arrow-left-right me-2"></i>Switch to Hardhat</button>
+            <button id="connectWalletButton" class="btn btn-primary btn-lg"><i class="bi bi-wallet2 me-2"></i>Kết nối Ví</button>
+            <button id="switchNetworkButton" class="btn btn-outline-primary btn-lg"><i class="bi bi-arrow-left-right me-2"></i>Chuyển mạng Hardhat</button>
           </div>
         </section>
 
@@ -68,28 +68,28 @@
           <div class="col-lg-3 col-md-6">
             <div class="status-card h-100">
               <div class="status-icon"><i class="bi bi-person-circle"></i></div>
-              <span class="status-label">Connected account</span>
-              <strong id="accountValue" class="status-value">Not connected</strong>
+              <span class="status-label">Tài khoản kết nối</span>
+              <strong id="accountValue" class="status-value">Chưa kết nối</strong>
             </div>
           </div>
           <div class="col-lg-3 col-md-6">
             <div class="status-card h-100">
               <div class="status-icon"><i class="bi bi-hdd-network"></i></div>
-              <span class="status-label">Network</span>
-              <strong id="networkValue" class="status-value">Unknown</strong>
+              <span class="status-label">Mạng</span>
+              <strong id="networkValue" class="status-value">Chưa xác định</strong>
             </div>
           </div>
           <div class="col-lg-3 col-md-6">
             <div class="status-card h-100">
               <div class="status-icon"><i class="bi bi-patch-check"></i></div>
-              <span class="status-label">Voter status</span>
-              <strong id="eligibilityValue" class="status-value">Read only</strong>
+              <span class="status-label">Trạng thái cử tri</span>
+              <strong id="eligibilityValue" class="status-value">Chỉ xem</strong>
             </div>
           </div>
           <div class="col-lg-3 col-md-6">
             <div class="status-card h-100">
               <div class="status-icon"><i class="bi bi-bar-chart-line"></i></div>
-              <span class="status-label">Turnout</span>
+              <span class="status-label">Tỷ lệ tham gia</span>
               <strong id="turnoutValue" class="status-value">—</strong>
             </div>
           </div>
@@ -97,7 +97,7 @@
 
         <!-- Status banner -->
         <div id="statusBanner" class="alert alert-secondary status-banner" role="alert">
-          <i class="bi bi-info-circle me-2"></i><span id="statusText">Waiting for contract deployment.</span>
+          <i class="bi bi-info-circle me-2"></i><span id="statusText">Đang chờ triển khai hợp đồng.</span>
         </div>
 
         <!-- Election stats row -->
@@ -105,25 +105,25 @@
           <div class="col-md-3 col-6">
             <div class="stat-chip">
               <span class="stat-number" id="statTotalVotes">0</span>
-              <span class="stat-label">Total votes</span>
+              <span class="stat-label">Tổng phiếu bầu</span>
             </div>
           </div>
           <div class="col-md-3 col-6">
             <div class="stat-chip">
               <span class="stat-number" id="statCandidates">0</span>
-              <span class="stat-label">Candidates</span>
+              <span class="stat-label">Ứng cử viên</span>
             </div>
           </div>
           <div class="col-md-3 col-6">
             <div class="stat-chip">
               <span class="stat-number" id="statSnapshot">0</span>
-              <span class="stat-label">Snapshot voters</span>
+              <span class="stat-label">Cử tri đăng ký</span>
             </div>
           </div>
           <div class="col-md-3 col-6">
             <div class="stat-chip">
               <span class="stat-number" id="statAudit">0</span>
-              <span class="stat-label">Audit records</span>
+              <span class="stat-label">Bản ghi kiểm toán</span>
             </div>
           </div>
         </section>
@@ -132,37 +132,37 @@
         <section id="adminPanel" class="panel mb-4 d-none">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow mb-2"><i class="bi bi-gear-fill me-1"></i>Owner controls</p>
-              <h2 class="h4 mb-0">Admin actions</h2>
+              <p class="eyebrow mb-2"><i class="bi bi-gear-fill me-1"></i>Quản trị viên</p>
+              <h2 class="h4 mb-0">Thao tác quản lý</h2>
             </div>
-            <span class="badge text-bg-warning"><i class="bi bi-key-fill me-1"></i>Owner only</span>
+            <span class="badge text-bg-warning"><i class="bi bi-key-fill me-1"></i>Chỉ chủ sở hữu</span>
           </div>
           <div class="row g-4 mt-1">
             <div class="col-lg-4">
               <form id="candidateForm" class="action-card">
                 <div class="action-card-icon"><i class="bi bi-person-plus-fill"></i></div>
-                <label class="form-label" for="candidateName">Add candidate</label>
-                <input id="candidateName" class="form-control mb-3" type="text" placeholder="Enter candidate name" required maxlength="64" />
-                <button class="btn btn-accent w-100" type="submit"><i class="bi bi-plus-circle me-1"></i>Create candidate</button>
+                <label class="form-label" for="candidateName">Thêm ứng cử viên</label>
+                <input id="candidateName" class="form-control mb-3" type="text" placeholder="Nhập tên ứng cử viên" required maxlength="64" />
+                <button class="btn btn-accent w-100" type="submit"><i class="bi bi-plus-circle me-1"></i>Tạo ứng cử viên</button>
               </form>
             </div>
             <div class="col-lg-4">
               <form id="whitelistForm" class="action-card">
                 <div class="action-card-icon"><i class="bi bi-person-check-fill"></i></div>
-                <label class="form-label" for="voterAddress">Whitelist voter</label>
+                <label class="form-label" for="voterAddress">Xác nhận cử tri</label>
                 <input id="voterAddress" class="form-control mb-3" type="text" placeholder="0x..." required />
-                <p class="text-muted small mb-3">Test accounts listed in tai-khoan-test-local.md after each deploy.</p>
-                <button class="btn btn-accent w-100" type="submit"><i class="bi bi-check2-circle me-1"></i>Grant access</button>
+                <p class="text-muted small mb-3">Tài khoản test được liệt kê trong tai-khoan-test-local.md sau mỗi lần deploy.</p>
+                <button class="btn btn-accent w-100" type="submit"><i class="bi bi-check2-circle me-1"></i>Cấp quyền</button>
               </form>
             </div>
             <div class="col-lg-4">
               <div class="action-card">
                 <div class="action-card-icon"><i class="bi bi-lightning-charge-fill"></i></div>
-                <label class="form-label">Election lifecycle</label>
-                <p class="text-muted small mb-3">Start locks parameters and snapshots voters. End blocks further voting.</p>
+                <label class="form-label">Vòng đời bầu cử</label>
+                <p class="text-muted small mb-3">Bắt đầu sẽ khóa tham số và chốt danh sách cử tri. Kết thúc sẽ dừng nhận phiếu.</p>
                 <div class="d-grid gap-2">
-                  <button id="startElectionButton" class="btn btn-primary" type="button"><i class="bi bi-play-fill me-1"></i>Start election</button>
-                  <button id="endElectionButton" class="btn btn-outline-danger" type="button"><i class="bi bi-stop-fill me-1"></i>End election</button>
+                  <button id="startElectionButton" class="btn btn-primary" type="button"><i class="bi bi-play-fill me-1"></i>Bắt đầu bầu cử</button>
+                  <button id="endElectionButton" class="btn btn-outline-danger" type="button"><i class="bi bi-stop-fill me-1"></i>Kết thúc bầu cử</button>
                 </div>
               </div>
             </div>
@@ -173,7 +173,7 @@
         <section id="winnerBanner" class="winner-banner mb-4 d-none">
           <div class="winner-trophy"><i class="bi bi-trophy-fill"></i></div>
           <div>
-            <p class="eyebrow mb-1">Election result</p>
+            <p class="eyebrow mb-1">Kết quả bầu cử</p>
             <h2 class="h3 mb-1" id="winnerName">—</h2>
             <p class="mb-0 winner-detail" id="winnerDetail">—</p>
           </div>
@@ -183,8 +183,8 @@
         <section class="panel mb-4">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow mb-2"><i class="bi bi-clipboard2-data-fill me-1"></i>Live tally board</p>
-              <h2 class="h4 mb-0">Candidates</h2>
+              <p class="eyebrow mb-2"><i class="bi bi-clipboard2-data-fill me-1"></i>Bảng kiểm phiếu trực tiếp</p>
+              <h2 class="h4 mb-0">Ứng cử viên</h2>
             </div>
             <span id="electionStatusBadge" class="badge text-bg-secondary">Loading...</span>
           </div>
@@ -195,20 +195,20 @@
         <section id="auditPanel" class="panel mb-4 d-none">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow mb-2"><i class="bi bi-journal-text me-1"></i>On-chain history</p>
-              <h2 class="h4 mb-0">Audit trail</h2>
+              <p class="eyebrow mb-2"><i class="bi bi-journal-text me-1"></i>Lịch sử on-chain</p>
+              <h2 class="h4 mb-0">Nhật ký kiểm toán</h2>
             </div>
             <button id="toggleAuditButton" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-down me-1"></i>Show</button>
           </div>
           <div id="auditBody" class="audit-body mt-3 d-none">
             <div class="table-responsive">
-              <table class="table table-dark table-sm audit-table">
+              <table class="table table-sm audit-table">
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Action</th>
-                    <th>Actor</th>
-                    <th>Subject</th>
+                    <th>Hành động</th>
+                    <th>Người thực hiện</th>
+                    <th>Đối tượng</th>
                     <th>Ref</th>
                     <th>Block</th>
                   </tr>
@@ -222,7 +222,7 @@
 
       <footer class="site-footer">
         <div class="container text-center">
-          <p class="mb-0"><i class="bi bi-box-seam me-1"></i>BlockVote &mdash; Hardhat + Solidity + Ethers.js</p>
+          <p class="mb-0"><i class="bi bi-bank2 me-1"></i>Bầu cử ĐBQH Khóa XVI &mdash; Hardhat + Solidity + Ethers.js</p>
         </div>
       </footer>
     </div>

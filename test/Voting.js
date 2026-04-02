@@ -8,8 +8,8 @@ describe("Voting", function () {
     const voting = await Voting.deploy();
     await voting.waitForDeployment();
 
-    await voting.addCandidate("Alice Johnson");
-    await voting.addCandidate("Bob Smith");
+    await voting.addCandidate("Nguyễn Thế Huy");
+    await voting.addCandidate("Võ Huy Khánh");
 
     return { voting, owner, voter, secondVoter, outsider };
   }
@@ -20,14 +20,14 @@ describe("Voting", function () {
     expect(await voting.getCandidatesCount()).to.equal(2);
 
     const candidate = await voting.getCandidate(0);
-    expect(candidate[0]).to.equal("Alice Johnson");
+    expect(candidate[0]).to.equal("Nguyễn Thế Huy");
     expect(candidate[1]).to.equal(0);
   });
 
   it("blocks non-owners from mutating admin actions", async function () {
     const { voting, outsider } = await deployVotingFixture();
 
-    await expect(voting.connect(outsider).addCandidate("Carol Lee")).to.be.revertedWith(
+    await expect(voting.connect(outsider).addCandidate("Trương Thanh Nga")).to.be.revertedWith(
       "Only owner can call this function"
     );
 
@@ -61,7 +61,7 @@ describe("Voting", function () {
     await voting.whitelistVoter(outsider.address);
     await voting.startElection();
 
-    await expect(voting.addCandidate("Carol Lee")).to.be.revertedWith("Election parameters are frozen");
+    await expect(voting.addCandidate("Trương Thanh Nga")).to.be.revertedWith("Election parameters are frozen");
     await expect(voting.whitelistVoter(outsider.address)).to.be.revertedWith("Election parameters are frozen");
   });
 
@@ -73,7 +73,7 @@ describe("Voting", function () {
     await voting.connect(voter).vote(0);
     await voting.endElection();
 
-    await voting.addCandidate("Carol Lee");
+    await voting.addCandidate("Trương Thanh Nga");
     await voting.whitelistVoter(secondVoter.address);
 
     await expect(voting.startElection()).to.emit(voting, "ElectionStarted");
@@ -148,8 +148,8 @@ describe("Voting", function () {
 
     const candidates = await voting.getAllCandidates();
     expect(candidates).to.have.length(2);
-    expect(candidates[0].name).to.equal("Alice Johnson");
-    expect(candidates[1].name).to.equal("Bob Smith");
+    expect(candidates[0].name).to.equal("Nguyễn Thế Huy");
+    expect(candidates[1].name).to.equal("Võ Huy Khánh");
   });
 
   it("hasVoted returns false for all addresses before first election", async function () {
