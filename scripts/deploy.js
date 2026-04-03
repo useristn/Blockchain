@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
 
-const DEFAULT_CANDIDATES = ["Alice Johnson", "Bob Smith", "Carol Lee"];
+const DEFAULT_CANDIDATES = ["Nguyễn Thế Huy", "Võ Huy Khánh", "Trương Thanh Nga", "Dương Long Thành", "Dương Văn Hạnh"];
 const LOCAL_MNEMONIC = "test test test test test test test test test test test junk";
 const TEST_ACCOUNT_COUNT = 6;
 
@@ -35,7 +35,7 @@ function buildLocalTestAccounts() {
       address: wallet.address,
       privateKey: wallet.privateKey,
       derivationPath,
-      label: index === 0 ? "Owner / Admin" : `Voter ${index}`,
+      label: index === 0 ? "Owner / Quản trị" : ["Nguyễn Minh Khôi", "Nguyễn Thanh Nhật", "Trần Doãn Hòa"][index - 1] || `Cử tri ${index}`,
     };
   });
 }
@@ -44,15 +44,18 @@ async function writeTestAccountsMarkdown() {
   const network = await hre.ethers.provider.getNetwork();
   const accounts = buildLocalTestAccounts();
   const lines = [
-    "# Local Test Accounts",
+    "# Tài Khoản Test Local",
     "",
-    "Security warning: These keys are for local Hardhat testing only. Never use them on public networks.",
+    "⚠️ **Cảnh báo bảo mật:** Các khóa bí mật (Private Key) này chỉ dùng cho môi trường Hardhat local. Tuyệt đối KHÔNG sử dụng trên mạng thật.",
     "",
-    `- Network: ${network.name}`,
+    `- Mạng: ${network.name}`,
     `- Chain ID: ${Number(network.chainId)}`,
-    `- Generated at: ${new Date().toISOString()}`,
+    `- RPC URL: http://127.0.0.1:8545`,
+    `- Thời gian tạo: ${new Date().toISOString()}`,
     "",
-    "| Label | Index | Address | Private Key | Derivation Path |",
+    "## Danh sách tài khoản",
+    "",
+    "| Vai trò | Index | Địa chỉ ví | Khóa bí mật (Private Key) | Derivation Path |",
     "| --- | --- | --- | --- | --- |",
     ...accounts.map(
       (account) =>

@@ -5,12 +5,111 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const MAX_CANDIDATE_NAME_LENGTH = 64;
 
 const ACTION_LABELS = {
-  1: "Candidate Added",
-  2: "Voter Whitelisted",
-  3: "Election Started",
-  4: "Vote Cast",
-  5: "Election Ended",
-  6: "Round Reset",
+  1: "Thêm ứng cử viên",
+  2: "Xác nhận cử tri",
+  3: "Bắt đầu bầu cử",
+  4: "Bỏ phiếu",
+  5: "Kết thúc bầu cử",
+  6: "Đặt lại vòng",
+};
+
+/* ── Candidate biography database ── */
+const CANDIDATE_BIOS = {
+  "Nguyễn Thế Huy": {
+    ngaySinh: "06/01/1994",
+    gioiTinh: "Nam",
+    quocTich: "Việt Nam",
+    danToc: "Kinh",
+    tonGiao: "Không",
+    queQuan: "Phường Bến Cát, Thành phố Hồ Chí Minh",
+    noiO: "216 Ngô Gia Tự, tổ 95, khu 11, phường Thủ Dầu Một, Thành phố Hồ Chí Minh",
+    giaoDucPhoThong: "12/12",
+    ngoaiNgu: "Tiếng Anh IELTS 6.5",
+    hocHam: "Cử nhân",
+    trinhDoChinhTri: "Trung cấp",
+    chuyenMon: "Đại học chuyên ngành Tài chính",
+    ngheNghiep: "Phó Bí thư Đảng ủy, Phó Chủ tịch Hội đồng quản trị, Phó Tổng Giám đốc Tập đoàn Đầu tư và phát triển công nghiệp Becamex - CTCP; Chủ tịch Hội đồng thành viên Công ty TNHH MTV WTC Becamex",
+    noiCongTac: "Tập đoàn Đầu tư và phát triển công nghiệp Becamex – CTCP",
+    ngayVaoDang: "10/03/2022",
+    daiBieuQH: "Không",
+    daiBieuHDND: "Không",
+  },
+  "Võ Huy Khánh": {
+    ngaySinh: "15/07/1988",
+    gioiTinh: "Nam",
+    quocTich: "Việt Nam",
+    danToc: "Kinh",
+    tonGiao: "Không",
+    queQuan: "Xã Hòa Phú, Huyện Củ Chi, Thành phố Hồ Chí Minh",
+    noiO: "45 Nguyễn Văn Trỗi, Phường 15, Quận Phú Nhuận, Thành phố Hồ Chí Minh",
+    giaoDucPhoThong: "12/12",
+    ngoaiNgu: "Tiếng Anh TOEIC 780",
+    hocHam: "Thạc sĩ",
+    trinhDoChinhTri: "Cao cấp",
+    chuyenMon: "Thạc sĩ Quản lý công, Đại học Kinh tế Thành phố Hồ Chí Minh",
+    ngheNghiep: "Ủy viên Ban Chấp hành Đảng bộ, Phó Giám đốc Sở Kế hoạch và Đầu tư Thành phố Hồ Chí Minh",
+    noiCongTac: "Sở Kế hoạch và Đầu tư Thành phố Hồ Chí Minh",
+    ngayVaoDang: "20/08/2015",
+    daiBieuQH: "Không",
+    daiBieuHDND: "Không",
+  },
+  "Trương Thanh Nga": {
+    ngaySinh: "22/11/1990",
+    gioiTinh: "Nữ",
+    quocTich: "Việt Nam",
+    danToc: "Kinh",
+    tonGiao: "Phật giáo",
+    queQuan: "Phường Tân Định, Quận 1, Thành phố Hồ Chí Minh",
+    noiO: "78 Lý Tự Trọng, Phường Bến Thành, Quận 1, Thành phố Hồ Chí Minh",
+    giaoDucPhoThong: "12/12",
+    ngoaiNgu: "Tiếng Anh IELTS 7.0, Tiếng Pháp B2",
+    hocHam: "Tiến sĩ",
+    trinhDoChinhTri: "Cao cấp",
+    chuyenMon: "Tiến sĩ Luật học, Đại học Luật Thành phố Hồ Chí Minh",
+    ngheNghiep: "Phó Chủ tịch Hội Liên hiệp Phụ nữ Thành phố Hồ Chí Minh; Ủy viên Ủy ban Mặt trận Tổ quốc Việt Nam Thành phố",
+    noiCongTac: "Hội Liên hiệp Phụ nữ Thành phố Hồ Chí Minh",
+    ngayVaoDang: "15/05/2018",
+    daiBieuQH: "Không",
+    daiBieuHDND: "Đại biểu HĐND Thành phố khóa X",
+  },
+  "Dương Long Thành": {
+    ngaySinh: "03/09/1985",
+    gioiTinh: "Nam",
+    quocTich: "Việt Nam",
+    danToc: "Kinh",
+    tonGiao: "Không",
+    queQuan: "Xã Tân Thạnh Đông, Huyện Củ Chi, Thành phố Hồ Chí Minh",
+    noiO: "120 Trần Hưng Đạo, Phường Phạm Ngũ Lão, Quận 1, Thành phố Hồ Chí Minh",
+    giaoDucPhoThong: "12/12",
+    ngoaiNgu: "Tiếng Anh IELTS 7.5",
+    hocHam: "Phó Giáo sư, Tiến sĩ",
+    trinhDoChinhTri: "Cao cấp",
+    chuyenMon: "Tiến sĩ Kinh tế phát triển, Đại học Kinh tế Quốc dân",
+    ngheNghiep: "Phó Giáo sư, Phó Hiệu trưởng Trường Đại học Kinh tế Thành phố Hồ Chí Minh; Ủy viên Hội đồng Khoa học Bộ Giáo dục và Đào tạo",
+    noiCongTac: "Trường Đại học Kinh tế Thành phố Hồ Chí Minh",
+    ngayVaoDang: "12/10/2012",
+    daiBieuQH: "Không",
+    daiBieuHDND: "Không",
+  },
+  "Dương Văn Hạnh": {
+    ngaySinh: "18/03/1982",
+    gioiTinh: "Nam",
+    quocTich: "Việt Nam",
+    danToc: "Kinh",
+    tonGiao: "Không",
+    queQuan: "Thị trấn Hóc Môn, Huyện Hóc Môn, Thành phố Hồ Chí Minh",
+    noiO: "55 Pasteur, Phường Nguyễn Thái Bình, Quận 1, Thành phố Hồ Chí Minh",
+    giaoDucPhoThong: "12/12",
+    ngoaiNgu: "Tiếng Anh IELTS 6.0",
+    hocHam: "Thạc sĩ",
+    trinhDoChinhTri: "Cao cấp",
+    chuyenMon: "Thạc sĩ Xây dựng Đảng và Chính quyền nhà nước, Học viện Chính trị Quốc gia Hồ Chí Minh",
+    ngheNghiep: "Thành ủy viên, Bí thư Quận ủy Quận 12, Thành phố Hồ Chí Minh",
+    noiCongTac: "Quận ủy Quận 12, Thành phố Hồ Chí Minh",
+    ngayVaoDang: "25/04/2008",
+    daiBieuQH: "Không",
+    daiBieuHDND: "Đại biểu HĐND Thành phố khóa X",
+  },
 };
 
 const dom = {
@@ -87,8 +186,8 @@ function hasDeployment() {
 }
 
 function shortenAddress(address) {
-  if (!address) return "Not connected";
-  return `${address.slice(0, 6)}...${address.slice(-6)}`;
+  if (!address) return "Chưa kết nối";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 function setStatus(message, tone = "secondary") {
@@ -116,7 +215,7 @@ function showToast(message, type = "info") {
       <div class="toast-header">
         <i class="bi ${iconMap[type] || iconMap.info} me-2" style="color:var(--${type === "success" ? "success" : type === "danger" ? "danger" : type === "warning" ? "accent" : "info"})"></i>
         <strong class="me-auto">${escapeHtml(type.charAt(0).toUpperCase() + type.slice(1))}</strong>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
       <div class="toast-body">${escapeHtml(message)}</div>
     </div>
@@ -230,26 +329,12 @@ async function createContracts() {
 
 /* ── UI State ── */
 
-function updateWalletButton() {
-  if (appState.account) {
-    const short = shortenAddress(appState.account);
-    dom.connectWalletButton.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i>Connected · ${escapeHtml(short)}`;
-    dom.connectWalletButton.classList.add("btn-connected");
-    dom.connectWalletButton.classList.remove("btn-primary");
-  } else {
-    dom.connectWalletButton.innerHTML = '<i class="bi bi-wallet2 me-2"></i>Connect Wallet';
-    dom.connectWalletButton.classList.remove("btn-connected");
-    dom.connectWalletButton.classList.add("btn-primary");
-  }
-}
-
 async function updateConnectionState() {
   dom.accountValue.textContent = shortenAddress(appState.account);
-  updateWalletButton();
 
   if (!window.ethereum) {
-    dom.networkValue.textContent = "MetaMask missing";
-    dom.eligibilityValue.textContent = "Install MetaMask";
+    dom.networkValue.textContent = "Thiếu MetaMask";
+    dom.eligibilityValue.textContent = "Cài MetaMask";
     appState.isCorrectNetwork = false;
     return;
   }
@@ -262,30 +347,30 @@ async function updateConnectionState() {
     : `Wrong (${parseInt(chainId, 16)})`;
 
   if (!appState.account) {
-    dom.eligibilityValue.textContent = "Read only";
+    dom.eligibilityValue.textContent = "Chỉ xem";
     return;
   }
 
   if (appState.isOwner) {
     if (!appState.electionStarted) {
-      dom.eligibilityValue.textContent = "Owner · Setup";
+      dom.eligibilityValue.textContent = "Quản trị · Thiết lập";
       return;
     }
-    dom.eligibilityValue.textContent = appState.electionEnded ? "Owner · Closed" : "Owner · Active";
+    dom.eligibilityValue.textContent = appState.electionEnded ? "Quản trị · Đã đóng" : "Quản trị · Đang diễn ra";
     return;
   }
 
   if (!appState.electionStarted) {
-    dom.eligibilityValue.textContent = "Waiting";
+    dom.eligibilityValue.textContent = "Đang chờ";
     return;
   }
 
   if (appState.hasVoted) {
-    dom.eligibilityValue.textContent = "Voted \u2713";
+    dom.eligibilityValue.textContent = "Đã bỏ phiếu \u2713";
     return;
   }
 
-  dom.eligibilityValue.textContent = appState.isWhitelisted ? "Ready to vote" : "Not whitelisted";
+  dom.eligibilityValue.textContent = appState.isWhitelisted ? "Đủ điều kiện" : "Chưa được xác nhận";
 }
 
 function updateTurnout() {
@@ -306,35 +391,111 @@ function updateStats() {
 }
 
 function updateRoundBadge() {
-  dom.roundBadge.textContent = appState.electionRound > 0 ? `Round ${appState.electionRound}` : "Round \u2014";
+  dom.roundBadge.textContent = appState.electionRound > 0 ? `Vòng ${appState.electionRound}` : "Vòng \u2014";
 }
 
 function buildReadyStatus() {
   if (!hasDeployment()) {
-    return { message: "Contract not deployed. Run npm run deploy:localhost after starting Hardhat node.", tone: "warning" };
+    return { message: "Hợp đồng chưa triển khai. Chạy npm run deploy:localhost sau khi khởi động Hardhat node.", tone: "warning" };
   }
   if (!window.ethereum) {
-    return { message: "Read-only mode. Install or unlock MetaMask to send transactions.", tone: "secondary" };
+    return { message: "Chế độ chỉ xem. Cài đặt hoặc mở khóa MetaMask để gửi giao dịch.", tone: "secondary" };
   }
   if (!appState.account) {
-    return { message: "Contract synced. Connect a wallet to interact with the election.", tone: "secondary" };
+    return { message: "Đã đồng bộ hợp đồng. Kết nối ví để tham gia bầu cử.", tone: "secondary" };
   }
   if (!appState.isCorrectNetwork) {
-    return { message: "Wrong network detected. Switch MetaMask to Hardhat Localhost.", tone: "warning" };
+    return { message: "Phát hiện sai mạng. Chuyển MetaMask sang Hardhat Localhost.", tone: "warning" };
   }
   if (appState.isOwner) {
-    if (!appState.electionStarted) return { message: "Owner connected. Add candidates, whitelist voters, or start election.", tone: "info" };
-    if (appState.electionEnded) return { message: "Election closed. You can start a new round.", tone: "secondary" };
-    return { message: "Election active. Monitoring votes in real time.", tone: "info" };
+    if (!appState.electionStarted) return { message: "Quản trị viên đã kết nối. Thêm ứng cử viên, xác nhận cử tri hoặc bắt đầu bầu cử.", tone: "info" };
+    if (appState.electionEnded) return { message: "Bầu cử đã kết thúc. Bạn có thể bắt đầu vòng mới.", tone: "secondary" };
+    return { message: "Bầu cử đang diễn ra. Theo dõi phiếu bầu theo thời gian thực.", tone: "info" };
   }
-  if (!appState.electionStarted) return { message: "Waiting for the owner to start the election.", tone: "secondary" };
-  if (appState.electionEnded) return { message: "Election closed. Final results are shown below.", tone: "secondary" };
-  if (appState.hasVoted) return { message: "Your vote has been recorded on-chain.", tone: "secondary" };
-  if (appState.isWhitelisted) return { message: "You are eligible to vote. Choose a candidate below.", tone: "success" };
-  return { message: "Wallet connected but not whitelisted for this election.", tone: "warning" };
+  if (!appState.electionStarted) return { message: "Đang chờ quản trị viên bắt đầu bầu cử.", tone: "secondary" };
+  if (appState.electionEnded) return { message: "Bầu cử đã kết thúc. Kết quả cuối cùng hiển thị bên dưới.", tone: "secondary" };
+  if (appState.hasVoted) return { message: "Phiếu bầu của bạn đã được ghi nhận trên blockchain.", tone: "secondary" };
+  if (appState.isWhitelisted) return { message: "Bạn đủ điều kiện bỏ phiếu. Hãy chọn ứng cử viên bên dưới.", tone: "success" };
+  return { message: "Ví đã kết nối nhưng chưa được xác nhận cho cuộc bầu cử này.", tone: "warning" };
 }
 
 /* ── Render candidates ── */
+
+function getCandidateBio(name) {
+  return CANDIDATE_BIOS[name] || null;
+}
+
+function renderProfileModal(name) {
+  const bio = getCandidateBio(name);
+  if (!bio) return;
+
+  // Remove existing modal if any
+  const existing = document.getElementById("profileModal");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "profileModal";
+  modal.className = "profile-modal-overlay";
+  modal.innerHTML = `
+    <div class="profile-modal">
+      <div class="profile-modal-header">
+        <h2 class="profile-modal-name">${escapeHtml(name)}</h2>
+        <button class="profile-modal-close" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="profile-modal-body">
+        <div class="profile-section">
+          <h3 class="profile-section-title"><i class="bi bi-person-vcard me-2"></i>Thông tin cá nhân</h3>
+          <div class="profile-grid">
+            <div class="profile-field"><span class="profile-label">Ngày tháng năm sinh:</span><span class="profile-value">${escapeHtml(bio.ngaySinh)}</span></div>
+            <div class="profile-field"><span class="profile-label">Giới tính:</span><span class="profile-value">${escapeHtml(bio.gioiTinh)}</span></div>
+            <div class="profile-field"><span class="profile-label">Quốc tịch:</span><span class="profile-value">${escapeHtml(bio.quocTich)}</span></div>
+            <div class="profile-field"><span class="profile-label">Dân tộc:</span><span class="profile-value">${escapeHtml(bio.danToc)}</span></div>
+            <div class="profile-field"><span class="profile-label">Tôn giáo:</span><span class="profile-value">${escapeHtml(bio.tonGiao)}</span></div>
+            <div class="profile-field"><span class="profile-label">Quê quán:</span><span class="profile-value">${escapeHtml(bio.queQuan)}</span></div>
+            <div class="profile-field full-width"><span class="profile-label">Nơi ở hiện nay:</span><span class="profile-value">${escapeHtml(bio.noiO)}</span></div>
+          </div>
+        </div>
+        <div class="profile-section">
+          <h3 class="profile-section-title"><i class="bi bi-mortarboard me-2"></i>Trình độ học vấn</h3>
+          <div class="profile-grid">
+            <div class="profile-field"><span class="profile-label">Giáo dục phổ thông:</span><span class="profile-value">${escapeHtml(bio.giaoDucPhoThong)}</span></div>
+            <div class="profile-field"><span class="profile-label">Ngoại ngữ:</span><span class="profile-value">${escapeHtml(bio.ngoaiNgu)}</span></div>
+            <div class="profile-field"><span class="profile-label">Học hàm, học vị:</span><span class="profile-value">${escapeHtml(bio.hocHam)}</span></div>
+            <div class="profile-field"><span class="profile-label">Trình độ lý luận chính trị:</span><span class="profile-value">${escapeHtml(bio.trinhDoChinhTri)}</span></div>
+            <div class="profile-field full-width"><span class="profile-label">Chuyên môn nghiệp vụ:</span><span class="profile-value">${escapeHtml(bio.chuyenMon)}</span></div>
+          </div>
+        </div>
+        <div class="profile-section">
+          <h3 class="profile-section-title"><i class="bi bi-briefcase me-2"></i>Công tác</h3>
+          <div class="profile-grid">
+            <div class="profile-field full-width"><span class="profile-label">Nghề nghiệp, chức vụ:</span><span class="profile-value">${escapeHtml(bio.ngheNghiep)}</span></div>
+            <div class="profile-field"><span class="profile-label">Nơi công tác:</span><span class="profile-value">${escapeHtml(bio.noiCongTac)}</span></div>
+            <div class="profile-field"><span class="profile-label">Ngày vào Đảng:</span><span class="profile-value">${escapeHtml(bio.ngayVaoDang)}</span></div>
+            <div class="profile-field"><span class="profile-label">Đại biểu Quốc hội:</span><span class="profile-value">${escapeHtml(bio.daiBieuQH)}</span></div>
+            <div class="profile-field"><span class="profile-label">Đại biểu HĐND:</span><span class="profile-value">${escapeHtml(bio.daiBieuHDND)}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Close handlers
+  const closeBtn = modal.querySelector(".profile-modal-close");
+  closeBtn.addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
+  });
+  document.addEventListener("keydown", function handler(e) {
+    if (e.key === "Escape") {
+      modal.remove();
+      document.removeEventListener("keydown", handler);
+    }
+  });
+
+  // Animate in
+  requestAnimationFrame(() => modal.classList.add("active"));
+}
 
 function renderCandidates(candidates) {
   if (!candidates.length) {
@@ -342,8 +503,8 @@ function renderCandidates(candidates) {
       <div class="col-12">
         <div class="candidate-card" style="text-align:center;padding:2.5rem">
           <i class="bi bi-inbox" style="font-size:2.5rem;color:var(--text-muted);opacity:0.5"></i>
-          <h3 class="h5 mb-2 mt-3">No candidates yet</h3>
-          <p class="mb-0 text-muted">Deploy the contract and add candidates to get started.</p>
+          <h3 class="h5 mb-2 mt-3">Chưa có ứng cử viên</h3>
+          <p class="mb-0 text-muted">Deploy hợp đồng và thêm ứng cử viên để bắt đầu.</p>
         </div>
       </div>
     `;
@@ -365,11 +526,17 @@ function renderCandidates(candidates) {
         appState.hasVoted ||
         appState.electionEnded;
 
-      let btnText = "Not started";
+      let btnText = "Chưa bắt đầu";
       let btnIcon = "bi-hourglass";
-      if (appState.electionEnded) { btnText = "Election closed"; btnIcon = "bi-lock-fill"; }
-      else if (appState.hasVoted) { btnText = "Already voted"; btnIcon = "bi-check2-all"; }
-      else if (appState.electionStarted) { btnText = "Vote"; btnIcon = "bi-hand-index-thumb-fill"; }
+      if (appState.electionEnded) { btnText = "Bầu cử kết thúc"; btnIcon = "bi-lock-fill"; }
+      else if (appState.hasVoted) { btnText = "Đã bỏ phiếu"; btnIcon = "bi-check2-all"; }
+      else if (appState.electionStarted) { btnText = "Bỏ phiếu"; btnIcon = "bi-hand-index-thumb-fill"; }
+
+      const bio = getCandidateBio(candidate.name);
+      const bioSummary = bio
+        ? `<span class="candidate-bio-tag"><i class="bi bi-briefcase me-1"></i>${escapeHtml(bio.hocHam)}</span>
+           <span class="candidate-bio-tag"><i class="bi bi-geo-alt me-1"></i>${escapeHtml(bio.noiCongTac.length > 40 ? bio.noiCongTac.substring(0, 40) + "…" : bio.noiCongTac)}</span>`
+        : "";
 
       return `
         <div class="col-md-6 col-xl-4">
@@ -377,23 +544,27 @@ function renderCandidates(candidates) {
             <div class="d-flex justify-content-between align-items-center">
               <span class="candidate-rank">${candidate.id + 1}</span>
               <div class="d-flex align-items-center gap-2">
-                ${isLeader ? '<span class="leader-badge"><i class="bi bi-star-fill"></i> Leading</span>' : ""}
+                ${isLeader ? '<span class="leader-badge"><i class="bi bi-star-fill"></i> Dẫn đầu</span>' : ""}
                 <span class="badge text-bg-light" style="font-size:0.68rem">#${candidate.id}</span>
               </div>
             </div>
-            <div>
-              <h3 class="h4 mb-1">${escapeHtml(candidate.name)}</h3>
-              <p class="progress-label mb-0">One wallet = one vote</p>
+            <div class="candidate-info-area">
+              <div class="candidate-avatar"><i class="bi bi-person-fill"></i></div>
+              <div>
+                <h3 class="h5 mb-1">${escapeHtml(candidate.name)}</h3>
+                <div class="candidate-bio-tags">${bioSummary}</div>
+              </div>
             </div>
+            ${bio ? `<button class="btn btn-sm btn-outline-info btn-view-profile" data-candidate-name="${escapeHtml(candidate.name)}"><i class="bi bi-file-earmark-person me-1"></i>Xem hồ sơ</button>` : ""}
             <div>
               <div class="d-flex align-items-baseline gap-2">
                 <span class="vote-count">${candidate.voteCount}</span>
-                <span class="vote-label">vote${candidate.voteCount !== 1 ? "s" : ""}</span>
+                <span class="vote-label">phiếu</span>
               </div>
               <div class="progress mt-2" role="progressbar" aria-label="Vote share" aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
                 <div class="progress-bar" style="width: ${percentage}%"></div>
               </div>
-              <div class="progress-label mt-2">${percentage}% of total tally</div>
+              <div class="progress-label mt-2">${percentage}% tổng số phiếu</div>
             </div>
             <button class="btn btn-primary btn-vote mt-auto" data-candidate-id="${candidate.id}" ${disabled ? "disabled" : ""}>
               <i class="bi ${btnIcon} me-1"></i>${btnText}
@@ -404,10 +575,18 @@ function renderCandidates(candidates) {
     })
     .join("");
 
+  // Vote button listeners
   document.querySelectorAll(".btn-vote").forEach((button) => {
     button.addEventListener("click", async () => {
       const candidateId = Number(button.dataset.candidateId);
       await submitVote(candidateId);
+    });
+  });
+
+  // Profile modal listeners
+  document.querySelectorAll(".btn-view-profile").forEach((button) => {
+    button.addEventListener("click", () => {
+      renderProfileModal(button.dataset.candidateName);
     });
   });
 }
@@ -450,10 +629,10 @@ function updateWinnerBanner(candidates) {
   if (winners.length === 1) {
     const pct = Math.round((maxVotes / totalVotes) * 100);
     dom.winnerName.textContent = winners[0].name;
-    dom.winnerDetail.textContent = `${maxVotes} vote${maxVotes !== 1 ? "s" : ""} \u00b7 ${pct}% of total \u00b7 ${totalVotes} total votes cast`;
+    dom.winnerDetail.textContent = `${maxVotes} phiếu \u00b7 ${pct}% tổng số \u00b7 ${totalVotes} phiếu đã bỏ`;
   } else {
-    dom.winnerName.textContent = "Tie!";
-    dom.winnerDetail.textContent = `${winners.map((w) => w.name).join(", ")} tied with ${maxVotes} vote${maxVotes !== 1 ? "s" : ""} each`;
+    dom.winnerName.textContent = "Hòa!";
+    dom.winnerDetail.textContent = `${winners.map((w) => w.name).join(", ")} hòa với ${maxVotes} phiếu mỗi người`;
   }
   dom.winnerBanner.classList.remove("d-none");
 }
@@ -464,7 +643,7 @@ async function loadCandidates() {
   if (!hasDeployment()) {
     appState.lastCandidateRenderKey = "";
     renderCandidates([]);
-    setStatus("Contract not deployed. Run npm run deploy:localhost after starting Hardhat node.", "warning");
+    setStatus("Hợp đồng chưa triển khai. Chạy npm run deploy:localhost sau khi khởi động Hardhat node.", "warning");
     return [];
   }
 
@@ -490,13 +669,13 @@ async function loadCandidates() {
 
   if (appState.electionEnded) {
     dom.electionStatusBadge.className = "badge text-bg-danger";
-    dom.electionStatusBadge.innerHTML = '<i class="bi bi-lock-fill me-1"></i>Closed';
+    dom.electionStatusBadge.innerHTML = '<i class="bi bi-lock-fill me-1"></i>Đã đóng';
   } else if (appState.electionStarted) {
     dom.electionStatusBadge.className = "badge text-bg-success";
-    dom.electionStatusBadge.innerHTML = `<i class="bi bi-broadcast me-1"></i>Active \u00b7 ${appState.snapshotVoterCount} voters`;
+    dom.electionStatusBadge.innerHTML = `<i class="bi bi-broadcast me-1"></i>Đang diễn ra \u00b7 ${appState.snapshotVoterCount} cử tri`;
   } else {
     dom.electionStatusBadge.className = "badge text-bg-secondary";
-    dom.electionStatusBadge.innerHTML = '<i class="bi bi-gear me-1"></i>Preparation';
+    dom.electionStatusBadge.innerHTML = '<i class="bi bi-gear me-1"></i>Chuẩn bị';
   }
 
   dom.startElectionButton.disabled = appState.electionStarted && !appState.electionEnded;
@@ -604,7 +783,7 @@ async function syncUi() {
 
 async function ensureReadyForWrite() {
   if (!appState.account || !appState.contract) {
-    throw new Error("Connect your wallet before sending transactions.");
+    throw new Error("Kết nối ví trước khi thực hiện giao dịch.");
   }
   await ensureOnConfiguredNetwork();
 }
@@ -614,12 +793,12 @@ async function connectWallet() {
     await ensureProvider();
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
     appState.account = accounts[0] || null;
-    showToast("Wallet connected!", "success");
-    setStatus("Wallet connected. Loading contract state...", "info");
+    showToast("Đã kết nối ví!", "success");
+    setStatus("Đã kết nối ví. Đang tải trạng thái hợp đồng...", "info");
     await syncUi();
   } catch (error) {
     console.error(error);
-    setStatus(error.message || "Wallet connection failed.", "danger");
+    setStatus(error.message || "Kết nối ví thất bại.", "danger");
   }
 }
 
@@ -630,7 +809,7 @@ async function switchNetwork() {
       method: "wallet_switchEthereumChain",
       params: [{ chainId: getTargetChainIdHex() }],
     });
-    showToast("Switched to Hardhat network.", "success");
+    showToast("Đã chuyển sang mạng Hardhat.", "success");
     await syncUi();
   } catch (error) {
     if (error.code === 4902) {
@@ -646,37 +825,37 @@ async function switchNetwork() {
             },
           ],
         });
-        showToast("Hardhat network added.", "success");
+        showToast("Đã thêm mạng Hardhat.", "success");
         await syncUi();
         return;
       } catch (addError) {
         console.error(addError);
-        setStatus(addError.message || "Failed to add Hardhat network.", "danger");
+        setStatus(addError.message || "Không thể thêm mạng Hardhat.", "danger");
         return;
       }
     }
     console.error(error);
-    setStatus(error.message || "Failed to switch network.", "danger");
+    setStatus(error.message || "Không thể chuyển mạng.", "danger");
   }
 }
 
 async function submitVote(candidateId) {
   try {
     await ensureReadyForWrite();
-    if (!Number.isInteger(candidateId) || candidateId < 0) throw new Error("Invalid candidate id.");
+    if (!Number.isInteger(candidateId) || candidateId < 0) throw new Error("ID ứng cử viên không hợp lệ.");
 
     showSpinner();
-    setStatus("Submitting vote transaction. Confirm in MetaMask...", "warning");
+    setStatus("Đang gửi giao dịch bỏ phiếu. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.vote(candidateId);
     await transaction.wait();
     hideSpinner();
-    showToast("Vote submitted successfully!", "success");
-    setStatus("Vote submitted successfully.", "success");
+    showToast("Bỏ phiếu thành công!", "success");
+    setStatus("Đã bỏ phiếu thành công.", "success");
     await syncUi();
   } catch (error) {
     hideSpinner();
     console.error(error);
-    const msg = error.shortMessage || error.reason || error.message || "Vote failed.";
+    const msg = error.shortMessage || error.reason || error.message || "Bỏ phiếu thất bại.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
   }
@@ -687,22 +866,22 @@ async function addCandidate(event) {
   try {
     await ensureReadyForWrite();
     const name = dom.candidateName.value.trim();
-    if (!name) throw new Error("Candidate name is required.");
-    if (name.length > MAX_CANDIDATE_NAME_LENGTH) throw new Error(`Name must be \u2264 ${MAX_CANDIDATE_NAME_LENGTH} characters.`);
+    if (!name) throw new Error("Tên ứng cử viên không được để trống.");
+    if (name.length > MAX_CANDIDATE_NAME_LENGTH) throw new Error(`Tên phải ≤ ${MAX_CANDIDATE_NAME_LENGTH} ký tự.`);
 
     showSpinner();
-    setStatus("Creating candidate. Confirm in MetaMask...", "warning");
+    setStatus("Đang tạo ứng cử viên. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.addCandidate(name);
     await transaction.wait();
     hideSpinner();
     dom.candidateName.value = "";
-    showToast(`Candidate "${name}" added!`, "success");
-    setStatus("Candidate created successfully.", "success");
+    showToast(`Đã thêm ứng cử viên "${name}"!`, "success");
+    setStatus("Tạo ứng cử viên thành công.", "success");
     await syncUi();
   } catch (error) {
     hideSpinner();
     console.error(error);
-    const msg = error.shortMessage || error.reason || error.message || "Unable to add candidate.";
+    const msg = error.shortMessage || error.reason || error.message || "Không thể thêm ứng cử viên.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
   }
@@ -713,24 +892,24 @@ async function whitelistVoter(event) {
   try {
     await ensureReadyForWrite();
     const voterAddressInput = dom.voterAddress.value.trim();
-    if (!ethers.isAddress(voterAddressInput)) throw new Error("Enter a valid wallet address.");
+    if (!ethers.isAddress(voterAddressInput)) throw new Error("Nhập địa chỉ ví hợp lệ.");
 
     const voterAddress = ethers.getAddress(voterAddressInput);
-    if (voterAddress.toLowerCase() === ZERO_ADDRESS) throw new Error("Zero address is not allowed.");
+    if (voterAddress.toLowerCase() === ZERO_ADDRESS) throw new Error("Không cho phép địa chỉ zero.");
 
     showSpinner();
-    setStatus("Whitelisting voter. Confirm in MetaMask...", "warning");
+    setStatus("Đang cấp quyền cử tri. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.whitelistVoter(voterAddress);
     await transaction.wait();
     hideSpinner();
     dom.voterAddress.value = "";
-    showToast(`Voter ${shortenAddress(voterAddress)} whitelisted!`, "success");
-    setStatus("Voter access granted successfully.", "success");
+    showToast(`Cử tri ${shortenAddress(voterAddress)} đã được cấp quyền!`, "success");
+    setStatus("Cấp quyền cử tri thành công.", "success");
     await syncUi();
   } catch (error) {
     hideSpinner();
     console.error(error);
-    const msg = error.shortMessage || error.reason || error.message || "Unable to whitelist voter.";
+    const msg = error.shortMessage || error.reason || error.message || "Không thể cấp quyền cử tri.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
   }
@@ -741,21 +920,21 @@ async function startElection() {
     await ensureReadyForWrite();
     const summary = await appState.readOnlyContract.getElectionSummary();
     if (summary.started && !summary.ended) {
-      throw new Error("Election is already active. End it before starting a new round.");
+      throw new Error("Cuộc bầu cử đang diễn ra. Kết thúc trước khi bắt đầu vòng mới.");
     }
 
     showSpinner();
-    setStatus("Starting election. Confirm in MetaMask...", "warning");
+    setStatus("Đang bắt đầu bầu cử. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.startElection();
     await transaction.wait();
     hideSpinner();
-    showToast("Election started! Parameters are frozen.", "success");
-    setStatus("Election started. Parameters are now frozen.", "success");
+    showToast("Đã bắt đầu bầu cử! Các thông số đã được khóa.", "success");
+    setStatus("Bầu cử đã bắt đầu. Các thông số đã khóa.", "success");
     await syncUi();
   } catch (error) {
     hideSpinner();
     console.error(error);
-    const msg = error.shortMessage || error.reason || error.message || "Unable to start election.";
+    const msg = error.shortMessage || error.reason || error.message || "Không thể bắt đầu bầu cử.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
   }
@@ -766,17 +945,17 @@ async function endElection() {
     await ensureReadyForWrite();
 
     showSpinner();
-    setStatus("Closing election. Confirm in MetaMask...", "warning");
+    setStatus("Đang đóng cuộc bầu cử. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.endElection();
     await transaction.wait();
     hideSpinner();
-    showToast("Election closed. Results are final.", "success");
-    setStatus("Election closed successfully.", "success");
+    showToast("Đã kết thúc bầu cử. Kết quả là chính thức.", "success");
+    setStatus("Đã kết thúc bầu cử thành công.", "success");
     await syncUi();
   } catch (error) {
     hideSpinner();
     console.error(error);
-    const msg = error.shortMessage || error.reason || error.message || "Unable to close election.";
+    const msg = error.shortMessage || error.reason || error.message || "Không thể kết thúc bầu cử.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
   }
@@ -821,8 +1000,8 @@ async function bootstrap() {
     appState.auditOpen = !appState.auditOpen;
     dom.auditBody.classList.toggle("d-none", !appState.auditOpen);
     dom.toggleAuditButton.innerHTML = appState.auditOpen
-      ? '<i class="bi bi-chevron-up me-1"></i>Hide'
-      : '<i class="bi bi-chevron-down me-1"></i>Show';
+      ? '<i class="bi bi-chevron-up me-1"></i>Ẩn'
+      : '<i class="bi bi-chevron-down me-1"></i>Hiện';
     if (appState.auditOpen) await loadAuditTrail();
   });
 
