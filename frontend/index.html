@@ -33,6 +33,18 @@
     <!-- Toast container -->
     <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1090"></div>
 
+    <!-- Onboarding overlay -->
+    <div id="onboardingOverlay" class="onboarding-overlay">
+      <div class="onboarding-card">
+        <i class="bi bi-shield-lock-fill" style="font-size:3rem;color:var(--accent)"></i>
+        <h3 class="h4 mt-3 mb-2">Hệ thống bầu cử Blockchain</h3>
+        <p id="onboardingText" class="text-muted mb-0">Đang tải...</p>
+        <div class="onboarding-steps" id="onboardingDots"></div>
+        <button id="onboardingNext" class="btn btn-primary mt-3 w-100">Tiếp tục</button>
+        <button id="onboardingSkip" class="btn btn-sm btn-link text-muted mt-2">Bỏ qua</button>
+      </div>
+    </div>
+
     <div class="page-shell">
       <header class="top-bar">
         <div class="container d-flex align-items-center justify-content-between">
@@ -41,8 +53,9 @@
             <span class="top-bar-title">Bầu cử ĐBQH Khóa XVI</span>
           </div>
           <div class="d-flex align-items-center gap-3">
-            <span id="roundBadge" class="badge badge-round">Round —</span>
+            <span id="roundBadge" class="badge badge-round">Vòng —</span>
             <span id="livePulse" class="live-pulse" title="Polling active"><span class="pulse-dot"></span> Live</span>
+            <button id="themeToggle" class="theme-toggle" title="Chế độ tối/sáng"><i class="bi bi-moon-fill"></i></button>
           </div>
         </div>
       </header>
@@ -56,10 +69,29 @@
             <p class="hero-copy mb-0">
               Kết nối MetaMask, xác thực cử tri, bỏ phiếu chính xác một lần duy nhất mỗi ví và theo dõi kết quả kiểm phiếu trực tiếp theo thời gian thực.
             </p>
+            <!-- Step indicators -->
+            <div class="hero-steps" id="heroSteps">
+              <div class="hero-step" id="stepWallet" data-step="wallet">
+                <span class="hero-step-num">1</span>
+                <span>Kết nối ví</span>
+              </div>
+              <div class="hero-step" id="stepNetwork" data-step="network">
+                <span class="hero-step-num">2</span>
+                <span>Chuyển mạng</span>
+              </div>
+              <div class="hero-step" id="stepVote" data-step="vote">
+                <span class="hero-step-num">3</span>
+                <span>Bỏ phiếu</span>
+              </div>
+            </div>
           </div>
-          <div class="hero-actions">
-            <button id="connectWalletButton" class="btn btn-primary btn-lg"><i class="bi bi-wallet2 me-2"></i>Kết nối Ví</button>
-            <button id="switchNetworkButton" class="btn btn-outline-primary btn-lg"><i class="bi bi-arrow-left-right me-2"></i>Chuyển mạng Hardhat</button>
+          <div>
+            <div class="hero-actions">
+              <button id="connectWalletButton" class="btn btn-primary btn-lg"><i class="bi bi-wallet2 me-2"></i>Kết nối Ví</button>
+              <button id="switchNetworkButton" class="btn btn-outline-primary btn-lg"><i class="bi bi-arrow-left-right me-2"></i>Chuyển mạng Hardhat</button>
+            </div>
+            <!-- Mini bar chart -->
+            <div class="bar-chart" id="barChart" style="display:none"></div>
           </div>
         </section>
 
@@ -143,7 +175,8 @@
                 <div class="action-card-icon"><i class="bi bi-person-plus-fill"></i></div>
                 <label class="form-label" for="candidateName">Thêm ứng cử viên</label>
                 <input id="candidateName" class="form-control mb-3" type="text" placeholder="Nhập tên ứng cử viên" required maxlength="64" />
-                <button class="btn btn-accent w-100" type="submit"><i class="bi bi-plus-circle me-1"></i>Tạo ứng cử viên</button>
+                <button class="btn btn-accent w-100" type="submit" id="addCandidateBtn"><i class="bi bi-plus-circle me-1"></i>Tạo ứng cử viên</button>
+                <div class="tx-status" id="txStatusAdd"><i class="bi bi-hourglass-split spinner-mini"></i><span>Đang chờ...</span></div>
               </form>
             </div>
             <div class="col-lg-4">
@@ -152,7 +185,8 @@
                 <label class="form-label" for="voterAddress">Xác nhận cử tri</label>
                 <input id="voterAddress" class="form-control mb-3" type="text" placeholder="0x..." required />
                 <p class="text-muted small mb-3">Tài khoản test được liệt kê trong tai-khoan-test-local.md sau mỗi lần deploy.</p>
-                <button class="btn btn-accent w-100" type="submit"><i class="bi bi-check2-circle me-1"></i>Cấp quyền</button>
+                <button class="btn btn-accent w-100" type="submit" id="whitelistBtn"><i class="bi bi-check2-circle me-1"></i>Cấp quyền</button>
+                <div class="tx-status" id="txStatusWhitelist"><i class="bi bi-hourglass-split spinner-mini"></i><span>Đang chờ...</span></div>
               </form>
             </div>
             <div class="col-lg-4">
@@ -163,6 +197,7 @@
                 <div class="d-grid gap-2">
                   <button id="startElectionButton" class="btn btn-primary" type="button"><i class="bi bi-play-fill me-1"></i>Bắt đầu bầu cử</button>
                   <button id="endElectionButton" class="btn btn-outline-danger" type="button"><i class="bi bi-stop-fill me-1"></i>Kết thúc bầu cử</button>
+                  <div class="tx-status" id="txStatusElection"><i class="bi bi-hourglass-split spinner-mini"></i><span>Đang chờ...</span></div>
                 </div>
               </div>
             </div>
@@ -189,6 +224,12 @@
             <span id="electionStatusBadge" class="badge text-bg-secondary">Loading...</span>
           </div>
           <div id="candidateGrid" class="row g-4 mt-1"></div>
+          <!-- Shimmer placeholder -->
+          <div id="candidateShimmer" class="row g-4 mt-1 d-none">
+            <div class="col-md-6 col-xl-4"><div class="candidate-card shimmer p-3"><div class="shimmer shimmer-line shimmer-sm mb-2"></div><div class="shimmer shimmer-line shimmer-wide"></div><div class="shimmer shimmer-line shimmer-med"></div><div class="shimmer shimmer-line shimmer-wide mt-2"></div></div></div>
+            <div class="col-md-6 col-xl-4"><div class="candidate-card shimmer p-3"><div class="shimmer shimmer-line shimmer-sm mb-2"></div><div class="shimmer shimmer-line shimmer-wide"></div><div class="shimmer shimmer-line shimmer-med"></div><div class="shimmer shimmer-line shimmer-wide mt-2"></div></div></div>
+            <div class="col-md-6 col-xl-4"><div class="candidate-card shimmer p-3"><div class="shimmer shimmer-line shimmer-sm mb-2"></div><div class="shimmer shimmer-line shimmer-wide"></div><div class="shimmer shimmer-line shimmer-med"></div><div class="shimmer shimmer-line shimmer-wide mt-2"></div></div></div>
+          </div>
         </section>
 
         <!-- Audit trail -->

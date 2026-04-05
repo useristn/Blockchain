@@ -5,7 +5,7 @@
 - Mạng: localhost
 - Chain ID: 31337
 - RPC URL: http://127.0.0.1:8545
-- Thời gian tạo: 2026-04-02T13:48:45.675Z
+- Thời gian tạo: 2026-04-05T16:49:37.075Z
 
 ## Danh sách tài khoản
 
@@ -17,19 +17,3 @@
 | Trần Doãn Hòa | 3 | 0x90F79bf6EB2c4f870365E785982E1f101E93b906 | 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6 | m/44'/60'/0'/0/3 |
 | Cử tri 4 | 4 | 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65 | 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a | m/44'/60'/0'/0/4 |
 | Cử tri 5 | 5 | 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc | 0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba | m/44'/60'/0'/0/5 |
-
-## Hướng dẫn sử dụng
-
-1. Mở MetaMask → thêm mạng thủ công:
-   - **Network name:** Hardhat Localhost
-   - **RPC URL:** `http://127.0.0.1:8545`
-   - **Chain ID:** `31337`
-   - **Currency symbol:** ETH
-
-2. Import tài khoản: MetaMask → Import Account → dán **Khóa bí mật** từ bảng trên
-
-3. Vai trò các tài khoản:
-   - **Owner / Quản trị (Index 0):** Thêm ứng cử viên, cấp quyền cử tri, bắt đầu/kết thúc bầu cử
-   - **Nguyễn Minh Khôi (Index 1):** Cử tri — bỏ phiếu sau khi được whitelist
-   - **Nguyễn Thanh Nhật (Index 2):** Cử tri — bỏ phiếu sau khi được whitelist
-   - **Trần Doãn Hòa (Index 3):** Cử tri — bỏ phiếu sau khi được whitelist

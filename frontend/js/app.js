@@ -28,8 +28,8 @@ const CANDIDATE_BIOS = {
     hocHam: "Cử nhân",
     trinhDoChinhTri: "Trung cấp",
     chuyenMon: "Đại học chuyên ngành Tài chính",
-    ngheNghiep: "Phó Bí thư Đảng ủy, Phó Chủ tịch Hội đồng quản trị, Phó Tổng Giám đốc Tập đoàn Đầu tư và phát triển công nghiệp Becamex - CTCP; Chủ tịch Hội đồng thành viên Công ty TNHH MTV WTC Becamex",
-    noiCongTac: "Tập đoàn Đầu tư và phát triển công nghiệp Becamex – CTCP",
+    ngheNghiep: "Phó Bí thư Đảng ủy, Phó Chủ tịch Hội đồng quản trị, Phó Tổng Giám đốc Tập đoàn Đầu tư và phát triển công nghiệp Becamex - CTSP; Chủ tịch Hội đồng thành viên Công ty TNHH MTV WTC Becamex",
+    noiCongTac: "Tập đoàn Đầu tư và phát triển công nghiệp Becamex – CTSP",
     ngayVaoDang: "10/03/2022",
     daiBieuQH: "Không",
     daiBieuHDND: "Không",
@@ -121,6 +121,7 @@ const dom = {
   turnoutValue: document.getElementById("turnoutValue"),
   statusBanner: document.getElementById("statusBanner"),
   candidateGrid: document.getElementById("candidateGrid"),
+  candidateShimmer: document.getElementById("candidateShimmer"),
   adminPanel: document.getElementById("adminPanel"),
   candidateForm: document.getElementById("candidateForm"),
   candidateName: document.getElementById("candidateName"),
@@ -143,6 +144,12 @@ const dom = {
   auditBody: document.getElementById("auditBody"),
   auditTableBody: document.getElementById("auditTableBody"),
   toastContainer: document.getElementById("toastContainer"),
+  barChart: document.getElementById("barChart"),
+  themeToggle: document.getElementById("themeToggle"),
+  heroSteps: document.getElementById("heroSteps"),
+  stepWallet: document.getElementById("stepWallet"),
+  stepNetwork: document.getElementById("stepNetwork"),
+  stepVote: document.getElementById("stepVote"),
 };
 
 const appState = {
@@ -167,7 +174,11 @@ const appState = {
   isSyncing: false,
   hasPendingSync: false,
   lastCandidateRenderKey: "",
+  lastVoteCountSnapshot: {},
   auditOpen: false,
+  // Bug fix: track tx-in-progress per form
+  txInProgress: { addCandidate: false, whitelist: false, startEnd: false, vote: false },
+  profileKeyHandler: null,
 };
 
 /* ── Helpers ── */
@@ -222,18 +233,14 @@ function showToast(message, type = "info") {
   `;
   dom.toastContainer.insertAdjacentHTML("beforeend", html);
   const toastEl = document.getElementById(id);
-  // Bootstrap Toast requires bootstrap JS – use manual fade instead
   toastEl.style.opacity = "0";
   toastEl.style.transition = "opacity 0.3s ease";
   requestAnimationFrame(() => { toastEl.style.opacity = "1"; });
 
-  const closeBtn = toastEl.querySelector(".btn-close");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
-      toastEl.style.opacity = "0";
-      setTimeout(() => toastEl.remove(), 350);
-    });
-  }
+  toastEl.querySelector(".btn-close")?.addEventListener("click", () => {
+    toastEl.style.opacity = "0";
+    setTimeout(() => toastEl.remove(), 350);
+  });
 
   setTimeout(() => {
     if (toastEl.parentNode) {
@@ -311,15 +318,13 @@ async function createContracts() {
   }
 
   if (appState.account && window.ethereum) {
-    if (!appState.contract) {
-      const provider = await ensureProvider();
-      appState.signer = await provider.getSigner();
-      appState.contract = new ethers.Contract(
-        window.CONTRACT_CONFIG.contractAddress,
-        window.CONTRACT_CONFIG.abi,
-        appState.signer
-      );
-    }
+    const provider = await ensureProvider();
+    appState.signer = await provider.getSigner();
+    appState.contract = new ethers.Contract(
+      window.CONTRACT_CONFIG.contractAddress,
+      window.CONTRACT_CONFIG.abi,
+      appState.signer
+    );
     return;
   }
 
@@ -328,6 +333,28 @@ async function createContracts() {
 }
 
 /* ── UI State ── */
+
+function updateHeroSteps() {
+  const steps = [dom.stepWallet, dom.stepNetwork, dom.stepVote];
+  const stateMap = [
+    appState.account !== null,
+    appState.isCorrectNetwork,
+    (appState.isWhitelisted && appState.electionStarted) || appState.hasVoted,
+  ];
+
+  let activeIndex = 0;
+  for (let i = 0; i < stateMap.length; i++) {
+    if (stateMap[i]) activeIndex = i + 1;
+  }
+  activeIndex = Math.min(activeIndex, stateMap.length);
+
+  steps.forEach((step, i) => {
+    step.classList.remove("done", "active");
+    if (i < activeIndex - 1) step.classList.add("done");
+    if (i === activeIndex - 1 && activeIndex < stateMap.length) step.classList.add("active");
+    if (activeIndex === stateMap.length) steps.forEach(s => s.classList.add("done"));
+  });
+}
 
 async function updateConnectionState() {
   dom.accountValue.textContent = shortenAddress(appState.account);
@@ -340,11 +367,11 @@ async function updateConnectionState() {
   }
 
   const chainId = await getCurrentChainId();
-  const isCorrectNetwork = chainId.toLowerCase() === getTargetChainIdHex().toLowerCase();
+  const isCorrectNetwork = chainId && chainId.toLowerCase() === getTargetChainIdHex().toLowerCase();
   appState.isCorrectNetwork = isCorrectNetwork;
   dom.networkValue.textContent = isCorrectNetwork
     ? `Hardhat (${parseInt(chainId, 16)})`
-    : `Wrong (${parseInt(chainId, 16)})`;
+    : `Sai (${chainId ? parseInt(chainId, 16) : "?"})`;
 
   if (!appState.account) {
     dom.eligibilityValue.textContent = "Chỉ xem";
@@ -382,12 +409,21 @@ function updateTurnout() {
   }
 }
 
-function updateStats() {
+function updateStats(oldTotals) {
+  const oldVote = oldTotals?.totalVotesCast ?? appState.totalVotesCast;
+
   dom.statTotalVotes.textContent = appState.totalVotesCast;
   dom.statCandidates.textContent = appState.candidateCount;
   dom.statSnapshot.textContent = appState.snapshotVoterCount;
   dom.statAudit.textContent = appState.auditRecordCount;
   dom.statsPanel.classList.toggle("d-none", !hasDeployment());
+
+  // Bump animation when vote count changes
+  if (appState.totalVotesCast !== oldVote) {
+    dom.statTotalVotes.classList.remove("bump");
+    void dom.statTotalVotes.offsetWidth; // force reflow
+    dom.statTotalVotes.classList.add("bump");
+  }
 }
 
 function updateRoundBadge() {
@@ -414,9 +450,55 @@ function buildReadyStatus() {
   }
   if (!appState.electionStarted) return { message: "Đang chờ quản trị viên bắt đầu bầu cử.", tone: "secondary" };
   if (appState.electionEnded) return { message: "Bầu cử đã kết thúc. Kết quả cuối cùng hiển thị bên dưới.", tone: "secondary" };
-  if (appState.hasVoted) return { message: "Phiếu bầu của bạn đã được ghi nhận trên blockchain.", tone: "secondary" };
+  if (appState.hasVoted) return { message: "Phiếu bầu của bạn đã được ghi nhận trên blockchain.", tone: "success" };
   if (appState.isWhitelisted) return { message: "Bạn đủ điều kiện bỏ phiếu. Hãy chọn ứng cử viên bên dưới.", tone: "success" };
   return { message: "Ví đã kết nối nhưng chưa được xác nhận cho cuộc bầu cử này.", tone: "warning" };
+}
+
+/* ── Confetti ── */
+
+function showConfetti() {
+  const container = document.createElement("div");
+  container.className = "confetti-container";
+  const colors = ["#d4382c", "#f59e0b", "#198754", "#0d6efd", "#c8102e", "#6f42c1", "#e85d52"];
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement("div");
+    p.className = "confetti-particle";
+    p.style.left = Math.random() * 100 + "%";
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDelay = Math.random() * 1 + "s";
+    p.style.animationDuration = (2 + Math.random() * 2) + "s";
+    p.style.width = (6 + Math.random() * 6) + "px";
+    p.style.height = (6 + Math.random() * 6) + "px";
+    container.appendChild(p);
+  }
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), 5000);
+}
+
+/* ── Bar chart ── */
+
+function updateBarChart(candidates) {
+  if (!candidates.length || appState.totalVotesCast === 0) {
+    dom.barChart.style.display = "none";
+    return;
+  }
+
+  dom.barChart.style.display = "flex";
+  const maxVotes = Math.max(...candidates.map(c => c.voteCount), 1);
+  const maxHeight = 100;
+
+  dom.barChart.innerHTML = candidates.map(c => {
+    const heightPct = Math.max((c.voteCount / maxVotes) * maxHeight, 4);
+    const isWinner = c.voteCount === maxVotes && c.voteCount > 0;
+    return `
+      <div class="bar-group">
+        <span class="bar-amount">${c.voteCount}</span>
+        <div class="bar-col ${isWinner ? 'is-winner' : ''}" style="height:${heightPct}%"></div>
+        <span class="bar-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name.split(' ').pop())}</span>
+      </div>
+    `;
+  }).join("");
 }
 
 /* ── Render candidates ── */
@@ -429,9 +511,15 @@ function renderProfileModal(name) {
   const bio = getCandidateBio(name);
   if (!bio) return;
 
-  // Remove existing modal if any
+  // Bug fix: remove existing modal and key handler before adding new one
   const existing = document.getElementById("profileModal");
-  if (existing) existing.remove();
+  if (existing) {
+    existing.remove();
+    if (appState.profileKeyHandler) {
+      document.removeEventListener("keydown", appState.profileKeyHandler);
+      appState.profileKeyHandler = null;
+    }
+  }
 
   const modal = document.createElement("div");
   modal.id = "profileModal";
@@ -480,20 +568,30 @@ function renderProfileModal(name) {
   `;
   document.body.appendChild(modal);
 
-  // Close handlers
-  const closeBtn = modal.querySelector(".profile-modal-close");
-  closeBtn.addEventListener("click", () => modal.remove());
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) modal.remove();
-  });
-  document.addEventListener("keydown", function handler(e) {
+  // Bug fix: store key handler so we can remove it on close
+  const keyHandler = (e) => {
     if (e.key === "Escape") {
       modal.remove();
-      document.removeEventListener("keydown", handler);
+      document.removeEventListener("keydown", keyHandler);
+      appState.profileKeyHandler = null;
+    }
+  };
+  appState.profileKeyHandler = keyHandler;
+  document.addEventListener("keydown", keyHandler);
+
+  modal.querySelector(".profile-modal-close").addEventListener("click", () => {
+    modal.remove();
+    document.removeEventListener("keydown", keyHandler);
+    appState.profileKeyHandler = null;
+  });
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.remove();
+      document.removeEventListener("keydown", keyHandler);
+      appState.profileKeyHandler = null;
     }
   });
 
-  // Animate in
   requestAnimationFrame(() => modal.classList.add("active"));
 }
 
@@ -535,7 +633,7 @@ function renderCandidates(candidates) {
       const bio = getCandidateBio(candidate.name);
       const bioSummary = bio
         ? `<span class="candidate-bio-tag"><i class="bi bi-briefcase me-1"></i>${escapeHtml(bio.hocHam)}</span>
-           <span class="candidate-bio-tag"><i class="bi bi-geo-alt me-1"></i>${escapeHtml(bio.noiCongTac.length > 40 ? bio.noiCongTac.substring(0, 40) + "…" : bio.noiCongTac)}</span>`
+           <span class="candidate-bio-tag"><i class="bi bi-geo-alt me-1"></i>${escapeHtml(bio.noiCongTac.length > 40 ? bio.noiCongTac.substring(0, 40) + "\u2026" : bio.noiCongTac)}</span>`
         : "";
 
       return `
@@ -635,6 +733,24 @@ function updateWinnerBanner(candidates) {
     dom.winnerDetail.textContent = `${winners.map((w) => w.name).join(", ")} hòa với ${maxVotes} phiếu mỗi người`;
   }
   dom.winnerBanner.classList.remove("d-none");
+  showConfetti();
+}
+
+/* ── TX Status helpers ── */
+
+function setTxStatus(key, message, type = "pending") {
+  const elId = key === "addCandidate" ? "txStatusAdd" : key === "whitelist" ? "txStatusWhitelist" : "txStatusElection";
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const icon = type === "pending" ? '<i class="bi bi-hourglass-split"></i>' : '<i class="bi bi-check-circle-fill"></i>';
+  el.className = `tx-status visible ${type}`;
+  el.innerHTML = `${icon}<span>${escapeHtml(message)}</span>`;
+}
+
+function clearTxStatus(key) {
+  const elId = key === "addCandidate" ? "txStatusAdd" : key === "whitelist" ? "txStatusWhitelist" : "txStatusElection";
+  const el = document.getElementById(elId);
+  if (el) el.className = "tx-status";
 }
 
 /* ── Load state from contract ── */
@@ -642,10 +758,15 @@ function updateWinnerBanner(candidates) {
 async function loadCandidates() {
   if (!hasDeployment()) {
     appState.lastCandidateRenderKey = "";
+    dom.candidateShimmer.classList.add("d-none");
+    dom.candidateGrid.classList.remove("d-none");
     renderCandidates([]);
     setStatus("Hợp đồng chưa triển khai. Chạy npm run deploy:localhost sau khi khởi động Hardhat node.", "warning");
     return [];
   }
+
+  dom.candidateShimmer.classList.remove("d-none");
+  dom.candidateGrid.classList.add("d-none");
 
   await createContracts();
   const contract = appState.readOnlyContract;
@@ -757,18 +878,27 @@ async function syncUi() {
   appState.isSyncing = true;
 
   try {
+    const oldTotals = { totalVotesCast: appState.totalVotesCast };
     const candidates = await loadCandidates();
     await refreshAccessState();
+
+    dom.candidateShimmer.classList.add("d-none");
+    dom.candidateGrid.classList.remove("d-none");
+
     renderCandidatesIfChanged(candidates);
     updateWinnerBanner(candidates);
     updateTurnout();
-    updateStats();
+    updateStats(oldTotals);
     updateRoundBadge();
+    updateBarChart(candidates);
+    updateHeroSteps();
     await loadAuditTrail();
     const readyStatus = buildReadyStatus();
     setStatus(readyStatus.message, readyStatus.tone);
   } catch (error) {
     console.error(error);
+    dom.candidateShimmer.classList.add("d-none");
+    dom.candidateGrid.classList.remove("d-none");
     setStatus(error.message || "Unable to load data from the contract.", "danger");
   } finally {
     appState.isSyncing = false;
@@ -840,10 +970,15 @@ async function switchNetwork() {
 }
 
 async function submitVote(candidateId) {
+  // Bug fix: prevent double-click during pending vote
+  if (appState.txInProgress.vote) return;
   try {
     await ensureReadyForWrite();
     if (!Number.isInteger(candidateId) || candidateId < 0) throw new Error("ID ứng cử viên không hợp lệ.");
 
+    appState.txInProgress.vote = true;
+    // Disable all vote buttons immediately
+    document.querySelectorAll(".btn-vote").forEach(b => b.disabled = true);
     showSpinner();
     setStatus("Đang gửi giao dịch bỏ phiếu. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.vote(candidateId);
@@ -858,17 +993,24 @@ async function submitVote(candidateId) {
     const msg = error.shortMessage || error.reason || error.message || "Bỏ phiếu thất bại.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
+    await syncUi();
+  } finally {
+    appState.txInProgress.vote = false;
   }
 }
 
 async function addCandidate(event) {
   event.preventDefault();
+  // Bug fix: prevent double form submission
+  if (appState.txInProgress.addCandidate) return;
   try {
     await ensureReadyForWrite();
     const name = dom.candidateName.value.trim();
     if (!name) throw new Error("Tên ứng cử viên không được để trống.");
-    if (name.length > MAX_CANDIDATE_NAME_LENGTH) throw new Error(`Tên phải ≤ ${MAX_CANDIDATE_NAME_LENGTH} ký tự.`);
+    if (name.length > MAX_CANDIDATE_NAME_LENGTH) throw new Error(`Tên phải \u2264 ${MAX_CANDIDATE_NAME_LENGTH} ký tự.`);
 
+    appState.txInProgress.addCandidate = true;
+    setTxStatus("addCandidate", "Đang gửi giao dịch...", "pending");
     showSpinner();
     setStatus("Đang tạo ứng cử viên. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.addCandidate(name);
@@ -877,6 +1019,8 @@ async function addCandidate(event) {
     dom.candidateName.value = "";
     showToast(`Đã thêm ứng cử viên "${name}"!`, "success");
     setStatus("Tạo ứng cử viên thành công.", "success");
+    setTxStatus("addCandidate", "Thành công!", "success");
+    setTimeout(() => clearTxStatus("addCandidate"), 3000);
     await syncUi();
   } catch (error) {
     hideSpinner();
@@ -884,11 +1028,17 @@ async function addCandidate(event) {
     const msg = error.shortMessage || error.reason || error.message || "Không thể thêm ứng cử viên.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
+    setTxStatus("addCandidate", "Lỗi!", "pending");
+    setTimeout(() => clearTxStatus("addCandidate"), 3000);
+  } finally {
+    appState.txInProgress.addCandidate = false;
   }
 }
 
 async function whitelistVoter(event) {
   event.preventDefault();
+  // Bug fix: prevent double form submission
+  if (appState.txInProgress.whitelist) return;
   try {
     await ensureReadyForWrite();
     const voterAddressInput = dom.voterAddress.value.trim();
@@ -897,6 +1047,8 @@ async function whitelistVoter(event) {
     const voterAddress = ethers.getAddress(voterAddressInput);
     if (voterAddress.toLowerCase() === ZERO_ADDRESS) throw new Error("Không cho phép địa chỉ zero.");
 
+    appState.txInProgress.whitelist = true;
+    setTxStatus("whitelist", "Đang gửi giao dịch...", "pending");
     showSpinner();
     setStatus("Đang cấp quyền cử tri. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.whitelistVoter(voterAddress);
@@ -905,6 +1057,8 @@ async function whitelistVoter(event) {
     dom.voterAddress.value = "";
     showToast(`Cử tri ${shortenAddress(voterAddress)} đã được cấp quyền!`, "success");
     setStatus("Cấp quyền cử tri thành công.", "success");
+    setTxStatus("whitelist", "Thành công!", "success");
+    setTimeout(() => clearTxStatus("whitelist"), 3000);
     await syncUi();
   } catch (error) {
     hideSpinner();
@@ -912,10 +1066,16 @@ async function whitelistVoter(event) {
     const msg = error.shortMessage || error.reason || error.message || "Không thể cấp quyền cử tri.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
+    setTxStatus("whitelist", "Lỗi!", "pending");
+    setTimeout(() => clearTxStatus("whitelist"), 3000);
+  } finally {
+    appState.txInProgress.whitelist = false;
   }
 }
 
 async function startElection() {
+  // Bug fix: prevent double-click
+  if (appState.txInProgress.startEnd) return;
   try {
     await ensureReadyForWrite();
     const summary = await appState.readOnlyContract.getElectionSummary();
@@ -923,6 +1083,8 @@ async function startElection() {
       throw new Error("Cuộc bầu cử đang diễn ra. Kết thúc trước khi bắt đầu vòng mới.");
     }
 
+    appState.txInProgress.startEnd = true;
+    setTxStatus("election", "Đang gửi giao dịch...", "pending");
     showSpinner();
     setStatus("Đang bắt đầu bầu cử. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.startElection();
@@ -930,6 +1092,8 @@ async function startElection() {
     hideSpinner();
     showToast("Đã bắt đầu bầu cử! Các thông số đã được khóa.", "success");
     setStatus("Bầu cử đã bắt đầu. Các thông số đã khóa.", "success");
+    setTxStatus("election", "Thành công!", "success");
+    setTimeout(() => clearTxStatus("election"), 3000);
     await syncUi();
   } catch (error) {
     hideSpinner();
@@ -937,13 +1101,21 @@ async function startElection() {
     const msg = error.shortMessage || error.reason || error.message || "Không thể bắt đầu bầu cử.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
+    setTxStatus("election", "Lỗi!", "pending");
+    setTimeout(() => clearTxStatus("election"), 3000);
+  } finally {
+    appState.txInProgress.startEnd = false;
   }
 }
 
 async function endElection() {
+  // Bug fix: prevent double-click
+  if (appState.txInProgress.startEnd) return;
   try {
     await ensureReadyForWrite();
 
+    appState.txInProgress.startEnd = true;
+    setTxStatus("election", "Đang gửi giao dịch...", "pending");
     showSpinner();
     setStatus("Đang đóng cuộc bầu cử. Xác nhận trong MetaMask...", "warning");
     const transaction = await appState.contract.endElection();
@@ -951,6 +1123,8 @@ async function endElection() {
     hideSpinner();
     showToast("Đã kết thúc bầu cử. Kết quả là chính thức.", "success");
     setStatus("Đã kết thúc bầu cử thành công.", "success");
+    setTxStatus("election", "Thành công!", "success");
+    setTimeout(() => clearTxStatus("election"), 3000);
     await syncUi();
   } catch (error) {
     hideSpinner();
@@ -958,7 +1132,29 @@ async function endElection() {
     const msg = error.shortMessage || error.reason || error.message || "Không thể kết thúc bầu cử.";
     showToast(msg, "danger");
     setStatus(msg, "danger");
+    setTxStatus("election", "Lỗi!", "pending");
+    setTimeout(() => clearTxStatus("election"), 3000);
+  } finally {
+    appState.txInProgress.startEnd = false;
   }
+}
+
+/* ── Dark mode ── */
+
+function initTheme() {
+  const saved = localStorage.getItem("voting-dark-mode");
+  if (saved === "true" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    document.body.classList.add("dark-mode");
+    dom.themeToggle.innerHTML = '<i class="bi bi-sun-fill"></i>';
+  } else {
+    dom.themeToggle.innerHTML = '<i class="bi bi-moon-fill"></i>';
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  dom.themeToggle.innerHTML = isDark ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-fill"></i>';
+  localStorage.setItem("voting-dark-mode", isDark);
 }
 
 /* ── Listeners ── */
@@ -970,6 +1166,7 @@ function registerProviderListeners() {
     appState.account = accounts[0] || null;
     appState.signer = null;
     appState.contract = null;
+    appState.txInProgress = { addCandidate: false, whitelist: false, startEnd: false, vote: false };
     await syncUi();
   });
 
@@ -995,6 +1192,7 @@ async function bootstrap() {
   dom.whitelistForm.addEventListener("submit", whitelistVoter);
   dom.startElectionButton.addEventListener("click", startElection);
   dom.endElectionButton.addEventListener("click", endElection);
+  dom.themeToggle.addEventListener("click", toggleTheme);
 
   dom.toggleAuditButton.addEventListener("click", async () => {
     appState.auditOpen = !appState.auditOpen;
@@ -1005,6 +1203,7 @@ async function bootstrap() {
     if (appState.auditOpen) await loadAuditTrail();
   });
 
+  initTheme();
   registerProviderListeners();
   startPolling();
   await syncUi();
